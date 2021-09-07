@@ -1,0 +1,50 @@
+import asyncio
+import aiohttp
+from db import Connection
+from configs import guilds
+from network import Async
+import time
+import sys
+
+SLEEP = 1800
+
+async def gxp_tracker_task():
+    while True:
+        URL = "https://api.wynncraft.com/public_api.php?action=guildStats&command=Titans Valor"
+        g = await Async.get(URL)
+        members = g["members"]
+
+        query = Connection.execute(f"SELECT * FROM user_total_xps")
+        uuid_to_xp = {x[4]:x[:4] for x in query} # name xp lastxp guild
+        
+        new_queries = []
+        new_members = []
+        record_xps = []
+
+        for m in members:
+            if not m["uuid"] in uuid_to_xp:
+                # new user
+                new_members.append(
+                    f"(\"{m['name']}\",{m['contributed']},{m['contributed']},\"Titans Valor\",\"{m['uuid']}\")"
+                )
+            elif m["contributed"] < uuid_to_xp[m["uuid"]][2]:
+                # user rejoins
+                new_xp = uuid_to_xp[m["uuid"]][1]+m["contributed"]
+                new_queries.append(f"UPDATE user_total_xps SET xp={new_xp}, last_xp={m['contributed']} WHERE uuid=\"{m['uuid']}\";")
+                record_xps.append(f"(\"{m['uuid']}\", \"{m['name']}\", \"Titans Valor\", {m['contributed']}, {int(time.time())})")
+            elif m["contributed"] > uuid_to_xp[m["uuid"]][2]:
+                # user gains xp
+                delta = m["contributed"]-uuid_to_xp[m["uuid"]][2]
+                new_xp = uuid_to_xp[m["uuid"]][1]+delta
+                new_queries.append(f"UPDATE user_total_xps SET xp={new_xp}, last_xp={m['contributed']} WHERE uuid=\"{m['uuid']}\";")
+                record_xps.append(f"(\"{m['uuid']}\", \"{m['name']}\", \"Titans Valor\", {delta}, {int(time.time())})")
+        
+        if len(new_members):
+            Connection.execute(f"INSERT INTO user_total_xps VALUES {','.join(new_members)};")
+        if len(record_xps):
+            Connection.execute(f"INSERT INTO member_record_xps VALUES {','.join(record_xps)};")
+        if len(new_queries):
+            print(new_queries)
+            Connection.exec_all(new_queries)
+        
+        await asyncio.sleep(SLEEP)
