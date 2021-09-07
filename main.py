@@ -12,11 +12,9 @@ ev.create_task(gxp_tracker_task())
 conns = set()
 async def terr_connect(websocket, path):
     conns.add(websocket)
-    print("connection added")
     try:
         await websocket.recv()
     finally:
-        print(websocket, "disconnected")
         conns.remove(websocket)
 
 start = websockets.serve(terr_connect, "localhost", 8080)

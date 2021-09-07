@@ -44,7 +44,6 @@ async def gxp_tracker_task():
         if len(record_xps):
             Connection.execute(f"INSERT INTO member_record_xps VALUES {','.join(record_xps)};")
         if len(new_queries):
-            print(new_queries)
             Connection.exec_all(new_queries)
         
         await asyncio.sleep(SLEEP)
