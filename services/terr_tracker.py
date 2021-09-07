@@ -6,7 +6,7 @@ from network import Async
 import time
 import sys
 
-SLEEP = 30
+SLEEP = 60
 
 async def terr_tracker_task(wsconns):
     while True:
@@ -29,5 +29,5 @@ async def terr_tracker_task(wsconns):
 
         for ws in wsconns:
             await ws.send(f"[{','.join(ws_payload)}]")
-            
+
         await asyncio.sleep(SLEEP)
