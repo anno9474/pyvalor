@@ -6,7 +6,7 @@ from network import Async
 import time
 import sys
 
-SLEEP = 60
+SLEEP = 30
 
 async def terr_tracker_task(wsconns):
     while True:
@@ -14,14 +14,20 @@ async def terr_tracker_task(wsconns):
         terrs = (await Async.get(URL))["territories"]
         old_terrs = {x[0]: x[1] for x in Connection.execute("SELECT * FROM territories")}
         queries = []
+        
+        ws_payload = []
+
         for ter in terrs:
             if terrs[ter]["guild"] != old_terrs[ter]:
-                for ws in wsconns:
-                    await ws.send('{"defender": "%s", "territory": "%s", "attacker": "%s"}' % 
-                                    (old_terrs[ter], ter, terrs[ter]["guild"])
-                    )
+                
+                ws_payload.append('{"defender": "%s", "territory": "%s", "attacker": "%s"}' % 
+                                    (old_terrs[ter], ter, terrs[ter]["guild"]))
                 queries.append(f"UPDATE territories SET guild=\"{terrs[ter]['guild']}\" WHERE name=\"{ter}\";")
+
         if len(queries):
             Connection.exec_all(queries)
 
+        for ws in wsconns:
+            await ws.send(f"[{','.join(ws_payload)}]")
+            
         await asyncio.sleep(SLEEP)
