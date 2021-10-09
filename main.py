@@ -1,15 +1,12 @@
 import asyncio
-from services import player_activity_task, gxp_tracker_task, terr_tracker_task
+from heartbeat import Heartbeat
 import websockets
 
 ev = asyncio.get_event_loop()
         
-# ev.run_until_complete(player_activity_task())
-
-ev.create_task(player_activity_task())
-ev.create_task(gxp_tracker_task())
-
 conns = set()
+Heartbeat.wsconns = conns
+
 async def terr_connect(websocket, path):
     conns.add(websocket)
     try:
@@ -19,5 +16,7 @@ async def terr_connect(websocket, path):
 
 start = websockets.serve(terr_connect, "localhost", 8080)
 ev.run_until_complete(start)
-ev.create_task(terr_tracker_task(conns))
+
+Heartbeat.run_tasks()
+
 ev.run_forever()
