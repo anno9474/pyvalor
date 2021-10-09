@@ -39,7 +39,10 @@ class TerritoryTrackTask(Task):
                         ws_payload.append('{"defender": "%s", "territory": "%s", "attacker": "%s"}' % 
                                             (old_terrs[ter], ter, terrs[ter]["guild"]))
                         
-                        insert_exchanges.append(f"({int(time.time())}, \"{old_terrs[ter]}\", \"{terrs[ter]['guild']}\", \"{ter}\")")
+                        acquired = terrs[ter]["acquired"]
+                        acquired = datetime.datetime.strptime(acquired, "%Y-%m-%d %H:%M:%S")
+                        
+                        insert_exchanges.append(f"({int(acquired.timestamp())}, \"{old_terrs[ter]}\", \"{terrs[ter]['guild']}\", \"{ter}\")")
                         queries.append(f"UPDATE territories SET guild=\"{terrs[ter]['guild']}\" WHERE name=\"{ter}\";")
 
                 if len(queries):
