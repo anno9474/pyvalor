@@ -8,8 +8,8 @@ class Heartbeat:
     wsconns = {}
     tasks: Task = [
         TerritoryTrackTask(60, wsconns),
-        PlayerActivityTask(3600),
-        GXPTrackerTask(1800)
+        # PlayerActivityTask(3600),
+        # GXPTrackerTask(1800)
     ]
     
     @staticmethod

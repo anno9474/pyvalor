@@ -14,7 +14,7 @@ class GXPTrackerTask(Task):
         
     def stop(self):
         self.finished = True
-        self.aTask.cancel()
+        self.continuous_task.cancel()
 
     def run(self):
         self.finished = False
@@ -66,4 +66,4 @@ class GXPTrackerTask(Task):
         
             print(datetime.datetime.now().ctime(), "GXPTrackerTask finished")
 
-        self.aTask = asyncio.get_event_loop().create_task(gxp_tracker_task())
+        self.continuous_task = asyncio.get_event_loop().create_task(self.continuously(gxp_tracker_task()))

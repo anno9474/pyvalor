@@ -14,7 +14,7 @@ class PlayerActivityTask(Task):
         
     def stop(self):
         self.finished = True
-        self.aTask.cancel()
+        self.continuous_task.cancel()
 
     def run(self):
         self.finished = False
@@ -43,4 +43,4 @@ class PlayerActivityTask(Task):
         
             print(datetime.datetime.now().ctime(), "PlayerActivityTask finished")
 
-        self.aTask = asyncio.get_event_loop().create_task(player_activity_task())
+        self.continuous_task = asyncio.get_event_loop().create_task(self.continuously(player_activity_task()))
