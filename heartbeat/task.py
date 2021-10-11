@@ -27,7 +27,6 @@ class Task:
         while not self.finished:
             task = asyncio.get_event_loop().create_task(coro())
             task.add_done_callback(self.done_callback)
-
+            await asyncio.wait_for(task)
             print(datetime.datetime.now().ctime(), "Restarting (Error Occured?)")
-
             await asyncio.sleep(10)
