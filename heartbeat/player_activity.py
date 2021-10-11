@@ -21,7 +21,6 @@ class PlayerActivityTask(Task):
         async def player_activity_task():
             print(datetime.datetime.now().ctime(), "PLAYER ACTIVITY TRACK START")
             start = time.time()
-            raise Exception("PLEAS EWORK EFOIWEHFWHEOF")
             URL = "https://api.wynncraft.com/public_api.php?action=guildStats&command="
             online_all = await Async.get("https://api.wynncraft.com/public_api.php?action=onlinePlayers")
             online_all = {y for x in online_all for y in online_all[x] if not "request" in x}
