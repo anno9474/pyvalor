@@ -69,5 +69,5 @@ class TerritoryTrackTask(Task):
         
             print(datetime.datetime.now().ctime(), "TerritoryTrackTask finished")
 
-        self.continuous_task = asyncio.get_event_loop().create_task(self.continuously(terr_tracker_task()))
+        self.continuous_task = asyncio.get_event_loop().create_task(self.continuously(terr_tracker_task))
         

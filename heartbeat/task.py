@@ -14,9 +14,9 @@ class Task:
     def stop(self):
         pass
 
-    def done_callback(self, msg):
+    def done_callback(self, task: asyncio.Task):
         # retrieve exception
-        exc = msg.exception()
+        exc = task.exception()
         if exc:
             traceback.print_exception(type(exc), exc, exc.__traceback__)
             return
@@ -24,9 +24,13 @@ class Task:
         print(self, "exited without callback?")
 
     async def continuously(self, coro):
-        while not self.finished:
-            task = asyncio.get_event_loop().create_task(coro())
-            task.add_done_callback(self.done_callback)
-            await asyncio.wait_for(task)
-            print(datetime.datetime.now().ctime(), "Restarting (Error Occured?)")
-            await asyncio.sleep(10)
+        try:
+            while not self.finished:
+                try:
+                    await coro()
+                except Exception as e:
+                    traceback.print_exception(type(e), e, e.__traceback__)
+                    print(datetime.datetime.now().ctime(), "Restarting (Error Occured?)")
+                await asyncio.sleep(10)
+        except Exception as e:
+            print(e)
