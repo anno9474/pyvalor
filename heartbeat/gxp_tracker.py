@@ -66,4 +66,4 @@ class GXPTrackerTask(Task):
         
             print(datetime.datetime.now().ctime(), "GXPTrackerTask finished")
 
-        self.continuous_task = asyncio.get_event_loop().create_task(self.continuously(gxp_tracker_task()))
+        self.continuous_task = asyncio.get_event_loop().create_task(self.continuously(gxp_tracker_task))

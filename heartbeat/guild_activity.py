@@ -46,4 +46,4 @@ class GuildActivityTask(Task):
         
             print(datetime.datetime.now().ctime(), "GuildActivityTask finished")
 
-        self.continuous_task = asyncio.get_event_loop().create_task(self.continuously(guild_activity_task()))
+        self.continuous_task = asyncio.get_event_loop().create_task(self.continuously(guild_activity_task))
