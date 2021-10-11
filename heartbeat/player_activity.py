@@ -55,4 +55,5 @@ class PlayerActivityTask(Task):
         
             print(datetime.datetime.now().ctime(), "PlayerActivityTask finished")
 
-        self.continuous_task = asyncio.get_event_loop().create_task(self.continuously(player_activity_task()))
+        self.continuous_task = asyncio.get_event_loop().create_task(self.continuously(player_activity_task))
+        
