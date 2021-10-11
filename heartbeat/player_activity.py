@@ -26,15 +26,23 @@ class PlayerActivityTask(Task):
                 URL = "https://api.wynncraft.com/public_api.php?action=guildStats&command="
                 online_all = await Async.get("https://api.wynncraft.com/public_api.php?action=onlinePlayers")
                 online_all = {y for x in online_all for y in online_all[x] if not "request" in x}
+
                 inserts = []
+                member_cache_refresh = []
+
                 for guild in guilds:
                     g = await Async.get(URL+guild)
                     members = {x["name"]: x["uuid"] for x in g["members"]}
                     for name in members:
-                        if name in online_all:
+                        member_cache_refresh.append((guild, name))
+                        if name in online_all: 
                             inserts.append(f"(\"{name}\", \"{guild}\", {int(time.time())}, \"{members[name]}\")")
 
                 Connection.execute(f"INSERT INTO activity_members VALUES {','.join(inserts)}")
+
+                # clear the cache
+                Connection.execute(f"DELETE FROM guild_member_cache")
+                Connection.execute(f"INSERT INTO guild_member_cache VALUES "+ ','.join(f"(\"{x[0]}\", \"{x[1]}\")" for x in member_cache_refresh))
 
                 end = time.time()
                 print(datetime.datetime.now().ctime(), "PLAYER ACTIVITY TASK", end-start, "s")
