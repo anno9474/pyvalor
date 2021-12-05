@@ -31,7 +31,7 @@ class PlayerActivityTask(Task):
             for guild in guilds:
                 g = await Async.get(URL+guild)
                 try:
-                    members = {x["name"]: x["uuid"] for x in g["members"]}
+                    members = {x["name"]: x["uuid"] for x in g["members"] if "name" in x}
                 except:
                     print(guild, "does not exist?")
                     continue
