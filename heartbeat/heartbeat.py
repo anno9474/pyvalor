@@ -7,12 +7,12 @@ from .player_stats import PlayerStatsTask
 import asyncio
 
 class Heartbeat:
-    wsconns = {}
+    wsconns = set()
     tasks: Task = [
         TerritoryTrackTask(60, wsconns),
         PlayerActivityTask(3600),
         GXPTrackerTask(1800),
-        GuildActivityTask(300),
+        GuildActivityTask(300, wsconns),
         PlayerStatsTask(3600)
     ]
     

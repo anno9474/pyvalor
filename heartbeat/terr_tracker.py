@@ -60,7 +60,7 @@ class TerritoryTrackTask(Task):
                     ','.join(f"({int(time.time())}, \"{k}\", {guild_terr_cnt[k]})" for k in guild_terr_cnt))
 
                 for ws in self.wsconns:
-                    await ws.send(f"[{','.join(ws_payload)}]")
+                    await ws.send("{'type':'terr','data':"+f"[{','.join(ws_payload)}]" + "}")
 
                 end = time.time()
                 print(datetime.datetime.now().ctime(), "TERRITORY TRACKER", end-start, "s")
