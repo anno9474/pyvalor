@@ -1,7 +1,6 @@
 import asyncio
 import aiohttp
 from db import Connection
-from configs import guilds
 from network import Async
 from .task import Task
 import time

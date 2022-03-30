@@ -1,7 +1,6 @@
 import asyncio
 import aiohttp
 from db import Connection
-from configs import guilds
 from network import Async
 from .task import Task
 import time
@@ -27,6 +26,8 @@ class PlayerActivityTask(Task):
 
             inserts = []
             member_cache_refresh = []
+
+            guilds = {g[0] for g in Connection.execute("SELECT * FROM guild_list")}
 
             for guild in guilds:
                 g = await Async.get(URL+guild)

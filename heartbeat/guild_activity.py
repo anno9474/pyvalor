@@ -1,7 +1,6 @@
 import asyncio
 import aiohttp
 from db import Connection
-from configs import guilds
 from network import Async
 from .task import Task
 import time
@@ -44,6 +43,7 @@ class GuildActivityTask(Task):
 
                 # get cached members
                 cached = {m: g for g, m in Connection.execute("SELECT * FROM guild_member_cache")}
+                guilds = {g[0] for g in Connection.execute("SELECT * FROM guild_list")}
                 guild_member_cnt = {g: 0 for g in guilds}
                 
                 for m in cached.keys() & online_all:
