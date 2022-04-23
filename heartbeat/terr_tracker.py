@@ -33,6 +33,15 @@ class TerritoryTrackTask(Task):
                 ws_payload = []
                 insert_exchanges = []
 
+                claim_res = Connection.execute("SELECT * FROM ally_claims")
+                claim_owner = {claim: guild for guild, claim in claim_res}
+                allied_guilds = {*claim_owner.values()}
+                    
+                ally_stats_res = Connection.execute("SELECT * FROM ally_stats")
+                ally_stats = {}
+                for old_ally_record in ally_stats_res:
+                    ally_stats[old_ally_record[0]] = list(old_ally_record[1:])
+
                 for ter in terrs:
                     guild_terr_cnt[terrs[ter]["guild"]] += 1
                     if not ter in old_terrs:
@@ -40,20 +49,34 @@ class TerritoryTrackTask(Task):
                         queries.append(f"INSERT INTO territories VALUES (\"{ter}\", \"{terrs[ter]['guild']}\", \"none\");")
 
                     elif terrs[ter]["guild"] != old_terrs[ter]:
-                        
+                        defender, attacker = old_terrs[ter], terrs[ter]['guild']
                         ws_payload.append('{"defender": "%s", "territory": "%s", "attacker": "%s"}' % 
-                                            (old_terrs[ter], ter, terrs[ter]["guild"]))
+                                            (defender, ter, attacker))
+
+                        if attacker in allied_guilds:
+                            if not attacker in ally_stats:
+                                # { "FFA":0, "Reclaim":0, "Help":0, "Other":0 }
+                                ally_stats[attacker] = [0]*4
                         
+                            terr_owner = claim_owner.get(ter, "null") # null case if new ter isn't registered yet
+                            ally_stats[attacker][0] += terr_owner == "null"
+                            ally_stats[attacker][1] += terr_owner == attacker
+                            ally_stats[attacker][2] += terr_owner != "null" and terr_owner in allied_guilds
+                            ally_stats[attacker][3] += defender == terr_owner and terr_owner in allied_guilds # ally-ally cede
+
                         acquired = terrs[ter]["acquired"]
                         acquired = datetime.datetime.strptime(acquired, "%Y-%m-%d %H:%M:%S")
                         
-                        insert_exchanges.append(f"({int(acquired.timestamp())}, \"{old_terrs[ter]}\", \"{terrs[ter]['guild']}\", \"{ter}\")")
-                        queries.append(f"UPDATE territories SET guild=\"{terrs[ter]['guild']}\" WHERE name=\"{ter}\";")
-            
+                        insert_exchanges.append(f"({int(acquired.timestamp())}, \"{defender}\", \"{attacker}\", \"{ter}\")")
+                        queries.append(f"UPDATE territories SET guild=\"{attacker}\" WHERE name=\"{ter}\";")
+
+                replace_ally_stats = [f"(\"{guild}\", {ally_stats[guild][0]}, {ally_stats[guild][1]}, {ally_stats[guild][2]}, {ally_stats[guild][3]})"
+                    for guild in ally_stats]
 
                 if len(queries):
                     Connection.exec_all(queries)
                     Connection.execute("INSERT INTO terr_exchange VALUES "+','.join(insert_exchanges))
+                    Connection.execute("REPLACE INTO ally_stats VALUES "+','.join(replace_ally_stats))
                 
                 Connection.execute("INSERT INTO terr_count VALUES "+
                     ','.join(f"({int(time.time())}, \"{k}\", {guild_terr_cnt[k]})" for k in guild_terr_cnt))
