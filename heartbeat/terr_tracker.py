@@ -61,8 +61,8 @@ class TerritoryTrackTask(Task):
                             terr_owner = claim_owner.get(ter, "null") # null case if new ter isn't registered yet
                             ally_stats[attacker][0] += terr_owner == "null"
                             ally_stats[attacker][1] += terr_owner == attacker
-                            ally_stats[attacker][2] += attacker != terr_owner and terr_owner != "null" and terr_owner in allied_guilds
-                            ally_stats[attacker][3] += defender == terr_owner and terr_owner in allied_guilds # ally-ally cede
+                            ally_stats[attacker][2] += attacker != terr_owner and terr_owner != "null" and terr_owner in allied_guilds and not defender in allied_guilds
+                            ally_stats[attacker][3] += defender == terr_owner and terr_owner in allied_guilds and attacker in allied_guilds # ally-ally cede
 
                         acquired = terrs[ter]["acquired"]
                         acquired = datetime.datetime.strptime(acquired, "%Y-%m-%d %H:%M:%S")
