@@ -23,7 +23,7 @@ class PlayerStatsTask(Task):
 
     def run(self):
         self.finished = False
-        idx = {'uuid': 0, 'firstjoin': 1, 'Decrepit Sewers': 2, 'Infested Pit': 3, 'Lost Sanctuary': 4, 'Underworld Crypt': 5, 'Sand-Swept Tomb': 6, 'Ice Barrows': 7, 'Undergrowth Ruins': 8, "Galleon's Graveyard": 9, 'Fallen Factory': 10, 'Eldritch Outlook': 11,'Corrupted Decrepit Sewers': 12, 'Corrupted Infested Pit': 13, 'Corrupted Lost Sanctuary': 14, 'Corrupted Underworld Crypt': 15, 'Corrupted Sand-Swept Tomb': 16, 'Corrupted Ice Barrows': 17, 'Corrupted Undergrowth Ruins': 18, 'itemsIdentified': 19, 'chestsFound': 20, 'blocksWalked': 21, 'logins': 22, 'playtime': 23, 'alchemism': 24, 'armouring': 25, 'combat': 26, 'cooking': 27, 'farming': 28, 'fishing': 29, 'jeweling': 30, 'mining': 31, 'scribing': 32, 'tailoring': 33, 'weaponsmithing': 34, 'woodcutting': 35, 'woodworking': 36, 'Nest of the Grootslangs': 37, 'The Canyon Colossus': 38, "mobsKilled": 39, "deaths": 40, "guild": 41, "Orphion's Nexus of Light": 42}
+        idx = {'uuid': 0, 'firstjoin': 1, 'Decrepit Sewers': 2, 'Infested Pit': 3, 'Lost Sanctuary': 4, 'Underworld Crypt': 5, 'Sand-Swept Tomb': 6, 'Ice Barrows': 7, 'Undergrowth Ruins': 8, "Galleon's Graveyard": 9, 'Fallen Factory': 10, 'Eldritch Outlook': 11,'Corrupted Decrepit Sewers': 12, 'Corrupted Infested Pit': 13, 'Corrupted Lost Sanctuary': 14, 'Corrupted Underworld Crypt': 15, 'Corrupted Sand-Swept Tomb': 16, 'Corrupted Ice Barrows': 17, 'Corrupted Undergrowth Ruins': 18, 'itemsIdentified': 19, 'chestsFound': 20, 'blocksWalked': 21, 'logins': 22, 'playtime': 23, 'alchemism': 24, 'armouring': 25, 'combat': 26, 'cooking': 27, 'farming': 28, 'fishing': 29, 'jeweling': 30, 'mining': 31, 'scribing': 32, 'tailoring': 33, 'weaponsmithing': 34, 'woodcutting': 35, 'woodworking': 36, 'Nest of the Grootslangs': 37, 'The Canyon Colossus': 38, "mobsKilled": 39, "deaths": 40, "guild": 41, "Orphion's Nexus of Light": 42, "guild_rank": 43}
         async def player_stats_task():
             while not self.finished:
                 print(datetime.datetime.now().ctime(), "PLAYER STATS TRACK START")
@@ -36,13 +36,28 @@ class PlayerStatsTask(Task):
                 uuid_name = []
                 cnt = 0
 
+                old_membership = {}
+                res = Connection.execute("SELECT uuid, guild, guild_rank FROM `player_stats` WHERE guild IS NOT NULL and guild != 'None' and guild != ''")
+                for uuid, guild, guild_rank in res:
+                    old_membership[uuid] = [guild, guild_rank]
+                
+                inserts_guild_log = []
+
                 for player in online_all:
                     uri = f"https://api.wynncraft.com/v2/player/{player}/stats?apikey="+api_key
                     stats = (await Async.get(uri))["data"][0]
                     row = [0]*len(idx)
                     uuid = stats["uuid"]
                     row[idx["uuid"]] = uuid
-                    row[idx["guild"]] = f'"{stats["guild"]["name"]}"'
+
+                    guild = stats["guild"]["name"]
+                    guild_rank = stats["guild"]["rank"]
+                    old_guild, old_rank = old_membership.get(uuid, [None, None])
+                    if guild != old_guild:
+                        inserts_guild_log.append(f"('{uuid}', '{old_guild}', '{old_rank}', '{guild}', {time.time()})")
+
+                    row[idx["guild"]] = f'"{guild}"'
+                    row[idx["guild_rank"]] = f'"{guild_rank}"'
                     row[idx["firstjoin"]] = datetime.datetime.fromisoformat(stats["meta"]["firstJoin"][:-1]).timestamp()
 
                     for cl in stats["classes"]:
@@ -70,11 +85,18 @@ class PlayerStatsTask(Task):
                     uuid_name.append((uuid, player))
                     cnt += 1
 
-                    if inserts and (cnt % 50 == 0 or cnt == len(online_all)-1):
-                        query_stats = "REPLACE INTO player_stats VALUES " + ','.join(f"('{x[0]}', {str(x[1])}, {','.join(map(str, x[2:]))})" for x in inserts)
-                        query_uuid = "REPLACE INTO uuid_name VALUES " + ','.join(f"(\'{uuid}\',\'{name}\')" for uuid, name in uuid_name)
-                        Connection.execute(query_stats)
-                        Connection.execute(query_uuid)
+                    if (cnt % 50 == 0 or cnt == len(online_all)-1):
+                        if inserts:
+                            query_stats = "REPLACE INTO player_stats VALUES " + ','.join(f"('{x[0]}', {str(x[1])}, {','.join(map(str, x[2:]))})" for x in inserts)
+                            query_uuid = "REPLACE INTO uuid_name VALUES " + ','.join(f"(\'{uuid}\',\'{name}\')" for uuid, name in uuid_name)
+                            Connection.execute(query_stats)
+                            Connection.execute(query_uuid)
+                        
+                        if inserts_guild_log:
+                            query_guild_log = "INSERT INTO guild_join_log VALUES " + ','.join(inserts_guild_log)
+                            Connection.execute(query_guild_log)
+                            
+                        inserts_guild_log = []
                         inserts = []
                         uuid_name = []
 
