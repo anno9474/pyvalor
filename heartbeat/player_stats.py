@@ -71,7 +71,7 @@ class PlayerStatsTask(Task):
 
                         row[idx["itemsIdentified"]] += cl["itemsIdentified"]
                         row[idx["mobsKilled"]] += cl["mobsKilled"]
-                        row[idx["chestsFound"]] += cl["chestsFound"]
+                        # row[idx["chestsFound"]] += cl["chestsFound"]
                         row[idx["blocksWalked"]] += cl["blocksWalked"]
                         row[idx["logins"]] += cl["logins"]
                         row[idx["deaths"]] += cl["deaths"]
