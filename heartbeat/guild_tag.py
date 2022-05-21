@@ -28,7 +28,7 @@ class GuildTagTask(Task):
                 current_guilds = set(x[0] for x in res)
                 
                 difference = updated_guilds - current_guilds
-                print(f"GUILD TAG NAME TASK: (difference: {len(difference)})")
+                print(datetime.datetime.now().ctime(), f"GUILD TAG NAME TASK: (difference: {len(difference)})")
 
                 inserts = []
 
