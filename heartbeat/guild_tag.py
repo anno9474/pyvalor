@@ -1,5 +1,4 @@
 import asyncio
-from turtle import update
 import aiohttp
 from db import Connection
 from network import Async
