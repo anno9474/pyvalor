@@ -42,7 +42,7 @@ class GuildTagTask(Task):
                 # batch insert if the # is too long for some reason
                 for i in range(0, len(inserts), 50):
                     batch = inserts[i:max(i+50, len(inserts))]
-                    Connection.execute("INSERT INTO guild_tag_name VALUES "+','.join(batch))
+                    Connection.execute("REPLACE INTO guild_tag_name VALUES "+','.join(batch))
 
                 end = time.time()
                 print(datetime.datetime.now().ctime(), "GUILD TAG NAME TASK", end-start, "s")
