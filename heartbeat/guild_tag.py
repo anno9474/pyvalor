@@ -1,4 +1,5 @@
 import asyncio
+from turtle import update
 import aiohttp
 from db import Connection
 from network import Async
@@ -26,11 +27,15 @@ class GuildTagTask(Task):
                 updated_guilds = set((await Async.get("https://api.wynncraft.com/public_api.php?action=guildList"))["guilds"]) # like 200K mem max
                 res = Connection.execute("SELECT guild FROM guild_tag_name")
                 current_guilds = set(x[0] for x in res)
+                current_guilds_lower = {x.lower().strip() for x in current_guilds}
                 
-                difference = updated_guilds - current_guilds
+                difference_dupe = updated_guilds-current_guilds
+                difference = {x for x in difference_dupe if not x.lower().strip() in current_guilds_lower}
+
                 print(datetime.datetime.now().ctime(), f"GUILD TAG NAME TASK: (difference: {len(difference)})")
 
                 inserts = []
+                print(difference)
 
                 for new_guild in difference:
                     req = await Async.get("https://api.wynncraft.com/public_api.php?action=guildStats&command="+new_guild)
@@ -41,7 +46,7 @@ class GuildTagTask(Task):
 
                 # batch insert if the # is too long for some reason
                 for i in range(0, len(inserts), 50):
-                    batch = inserts[i:max(i+50, len(inserts))]
+                    batch = inserts[i:min(i+50, len(inserts))]
                     Connection.execute("REPLACE INTO guild_tag_name VALUES "+','.join(batch))
 
                 end = time.time()
