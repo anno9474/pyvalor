@@ -8,9 +8,8 @@ import datetime
 import sys
 
 class GuildTagTask(Task):
-    def __init__(self, sleep, wsconns):
+    def __init__(self, sleep):
         super().__init__(sleep)
-        self.wsconns = wsconns
         
     def stop(self):
         self.finished = True
@@ -20,38 +19,30 @@ class GuildTagTask(Task):
         self.finished = False
         async def guild_tag_task():
             while not self.finished:
+                # this entire routine will take like 10MB/beat
                 print(datetime.datetime.now().ctime(), "GUILD TAG NAME TASK START")
                 start = time.time()
 
-                current_guild_members = (await Async.get("https://api.wynncraft.com/public_api.php?action=guildStats&command=Titans%20Valor"))["members"]
-                current_guild_members = {x["name"] for x in current_guild_members}
-                old_guild_members = {x[1] for x in Connection.execute(f"SELECT * FROM guild_member_cache") if x[0] == "Titans Valor"}
-                left = [f'"{x}"' for x in old_guild_members-current_guild_members]
-                join = [f'"{x}"' for x in current_guild_members-old_guild_members]
+                updated_guilds = set((await Async.get("https://api.wynncraft.com/public_api.php?action=guildList"))["guilds"]) # like 200K mem max
+                res = Connection.execute("SELECT guild FROM guild_tag_name")
+                current_guilds = set(x[0] for x in res)
                 
-                for ws in self.wsconns:
-                    if left or join:
-                        await ws.send('{"type":"join","leave":'+f'[{",".join(left)}],"join":'+f'[{",".join(join)}]' + "}")
-
-                Connection.execute("DELETE FROM guild_member_cache WHERE guild='Titans Valor'")
-                Connection.execute("INSERT INTO guild_member_cache VALUES "+",".join(f"('Titans Valor','{x}')" for x in current_guild_members))
-                
-                online_all = await Async.get("https://api.wynncraft.com/public_api.php?action=onlinePlayers")
-                online_all = {y for x in online_all for y in online_all[x] if not "request" in x}
+                difference = updated_guilds - current_guilds
+                print(f"GUILD TAG NAME TASK: (difference: {len(difference)})")
 
                 inserts = []
 
-                # get cached members
-                cached = {m: g for g, m in Connection.execute("SELECT * FROM guild_member_cache")}
-                guilds = {g[0] for g in Connection.execute("SELECT * FROM guild_list")}
-                guild_member_cnt = {g: 0 for g in guilds}
-                
-                for m in cached.keys() & online_all:
-                    guild_member_cnt[cached[m]] += 1
+                for new_guild in difference:
+                    req = await Async.get("https://api.wynncraft.com/public_api.php?action=guildStats&command="+new_guild)
+                    tag = req["prefix"]
+                    n_members = len(req["members"])
+                    inserts.append(f"('{new_guild}','{tag}',{n_members})")
+                    await asyncio.sleep(0.3)
 
-                now = int(time.time())
-                Connection.execute("INSERT INTO guild_member_count VALUES" +
-                    ','.join(f"(\"{guild}\", {guild_member_cnt[guild]}, {now})" for guild in guild_member_cnt))
+                # batch insert if the # is too long for some reason
+                for i in range(0, len(inserts), 50):
+                    batch = inserts[i:max(i+50, len(inserts))]
+                    Connection.execute("INSERT INTO guild_tag_name VALUES "+','.join(batch))
 
                 end = time.time()
                 print(datetime.datetime.now().ctime(), "GUILD TAG NAME TASK", end-start, "s")
