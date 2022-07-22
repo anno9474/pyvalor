@@ -11,7 +11,7 @@ async def terr_connect(websocket, path):
     finally:
         Heartbeat.wsconns.remove(websocket)
 
-start = websockets.serve(terr_connect, "localhost", 8080)
+start = websockets.serve(terr_connect, "localhost", 8090)
 ev.run_until_complete(start)
 
 Heartbeat.run_tasks()
