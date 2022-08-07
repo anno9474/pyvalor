@@ -8,9 +8,10 @@ import sys
 import datetime
 
 class TerritoryTrackTask(Task):
-    def __init__(self, sleep, wsconns):
+    def __init__(self, sleep, wsconns, cede_task):
         super().__init__(sleep)
         self.wsconns = wsconns
+        self.cede_task = cede_task
         
     def stop(self):
         self.finished = True
@@ -52,16 +53,26 @@ class TerritoryTrackTask(Task):
                         defender, attacker = old_terrs[ter], terrs[ter]['guild']
                         ws_payload.append('{"defender": "%s", "territory": "%s", "attacker": "%s"}' % 
                                             (defender, ter, attacker))
-
+                        # Alliance stuff
                         if attacker in allied_guilds:
                             if not attacker in ally_stats:
-                                # { "FFA":0, "Reclaim":0, "Help":0, "Other":0 }
-                                ally_stats[attacker] = [0]*4
+                                # { "FFA":0, "Reclaim":0, "adj help":0, "Other":0, "nom help": 0 }
+                                ally_stats[attacker] = [0]*5
                         
                             terr_owner = claim_owner.get(ter, "null") # null case if new ter isn't registered yet
                             ally_stats[attacker][0] += terr_owner == "null"
                             ally_stats[attacker][1] += terr_owner == attacker
-                            ally_stats[attacker][2] += attacker != terr_owner and terr_owner != "null" and terr_owner in allied_guilds and not defender in allied_guilds
+
+                            # adjusted helps (before adjusting)
+                            is_help = attacker != terr_owner and terr_owner != "null" and terr_owner in allied_guilds and not defender in allied_guilds
+                            ally_stats[attacker][2] += is_help
+                            # nom help
+                            ally_stats[attacker][4] += is_help
+                            # for cede tracking
+                            if not attacker in self.cede_task.valor_delta:
+                                self.cede_task.valor_delta[attacker] = 0
+                            self.cede_task.valor_delta[attacker] += is_help
+
                             ally_stats[attacker][3] += defender == terr_owner and terr_owner in allied_guilds and attacker in allied_guilds # ally-ally cede
 
                         acquired = terrs[ter]["acquired"]
@@ -70,7 +81,7 @@ class TerritoryTrackTask(Task):
                         insert_exchanges.append(f"({int(acquired.timestamp())}, \"{defender}\", \"{attacker}\", \"{ter}\")")
                         queries.append(f"UPDATE territories SET guild=\"{attacker}\" WHERE name=\"{ter}\";")
 
-                replace_ally_stats = [f"(\"{guild}\", {ally_stats[guild][0]}, {ally_stats[guild][1]}, {ally_stats[guild][2]}, {ally_stats[guild][3]})"
+                replace_ally_stats = [f"(\"{guild}\", {ally_stats[guild][0]}, {ally_stats[guild][1]}, {ally_stats[guild][2]}, {ally_stats[guild][3]}, {ally_stats[guild][4]})"
                     for guild in ally_stats]
 
                 if len(queries):
