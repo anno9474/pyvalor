@@ -71,7 +71,7 @@ class TerritoryTrackTask(Task):
                             # for cede tracking
                             if not attacker in self.cede_task.valor_delta:
                                 self.cede_task.valor_delta[attacker] = 0
-                            self.cede_task.valor_delta[attacker] += is_help
+                            self.cede_task.valor_delta[attacker] += 1
 
                             ally_stats[attacker][3] += defender == terr_owner and terr_owner in allied_guilds and attacker in allied_guilds # ally-ally cede
 
