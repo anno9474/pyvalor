@@ -50,13 +50,13 @@ class CedeTrackTask(Task):
                     api_guild_delta = api_delta[guild]
                     valor_guild_delta = self.valor_delta.get(guild, 0)
 
-                    help_diff = valor_guild_delta-api_guild_delta # subtract this from helps
+                    help_diff = max(valor_guild_delta-api_guild_delta, 0) # subtract this from helps
                     help_change[guild] = help_diff
                 
                 changes = []
                 for guild, ffa, reclaim, adj_help, other, nom_help in ally_stats:
                     if not guild in help_change: continue
-                    adj_help -= help_change[guild]
+                    adj_help = max(adj_help-help_change[guild], 0)
                     changes.append(f"('{guild}', {ffa}, {reclaim}, {adj_help}, {other}, {nom_help})")
 
                 replace_query = "REPLACE INTO ally_stats VALUES " + ','.join(changes)
