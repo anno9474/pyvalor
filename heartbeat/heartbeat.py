@@ -6,7 +6,12 @@ from .guild_activity import GuildActivityTask
 from .player_stats import PlayerStatsTask
 from .guild_tag import GuildTagTask
 from .cede_tracker import CedeTrackTask
+from dotenv import load_dotenv
 import asyncio
+import os
+
+load_dotenv()
+enabled = os.environ["ENABLED"].lower().split(',')
 
 class Heartbeat:
     wsconns = set()
@@ -25,9 +30,11 @@ class Heartbeat:
     @staticmethod
     def run_tasks():
         for t in Heartbeat.tasks:
+            if not t.__class__.__name__.lower() in enabled: continue
             t.run()
 
     @staticmethod
     def stop_tasks():
         for t in Heartbeat.tasks:
+            if not t.__class__.__name__.lower() in enabled: continue
             t.stop()

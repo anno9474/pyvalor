@@ -2,10 +2,14 @@ import asyncio
 import aiohttp
 from db import Connection
 from network import Async
+from dotenv import load_dotenv
 from .task import Task
 import time
 import datetime
-import sys
+import os
+
+load_dotenv()
+webhook = os.environ["JOINLEAVE"]
 
 class GuildActivityTask(Task):
     def __init__(self, sleep, wsconns):
@@ -29,9 +33,10 @@ class GuildActivityTask(Task):
                 left = [f'"{x}"' for x in old_guild_members-current_guild_members]
                 join = [f'"{x}"' for x in current_guild_members-old_guild_members]
                 
-                for ws in self.wsconns:
-                    if left or join:
+                if left or join:
+                    for ws in self.wsconns:
                         await ws.send('{"type":"join","leave":'+f'[{",".join(left)}],"join":'+f'[{",".join(join)}]' + "}")
+                    await Async.post(webhook, {"content": f"Joined: {repr(join)}\nLeft: {repr(left)}"})
 
                 Connection.execute("DELETE FROM guild_member_cache WHERE guild='Titans Valor'")
                 Connection.execute("INSERT INTO guild_member_cache VALUES "+",".join(f"('Titans Valor','{x}')" for x in current_guild_members))

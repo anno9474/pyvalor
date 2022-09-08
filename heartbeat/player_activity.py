@@ -5,7 +5,6 @@ from network import Async
 from .task import Task
 import time
 import datetime
-import sys
 
 class PlayerActivityTask(Task):
     def __init__(self, sleep):

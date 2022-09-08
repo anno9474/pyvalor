@@ -1,7 +1,7 @@
 import aiohttp
 import math
 import asyncio
-from typing import List, Union, Callable
+from typing import Any, Dict, List, Union, Callable
 
 SLEEP = 3
 TRY_SLEEP = SLEEP
@@ -47,4 +47,17 @@ class Async:
                 await asyncio.sleep(TRY_SLEEP)
             t -= 1
 
+    @staticmethod
+    async def post(uri: str, param: Dict[Any, Any]) -> Union[aiohttp.ClientResponse, None]:
+        t = TRIES
+        res = None
+        try: 
+            res = await Async.session.post(uri, json=param)
+            if not await res.text():  return
+            return await res.json()
+        except Exception as e:
+            print(uri, "borked")
+            print(e.with_traceback())
+            await asyncio.sleep(TRY_SLEEP)
+            
 _ = Async()
