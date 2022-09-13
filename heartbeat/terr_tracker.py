@@ -43,6 +43,8 @@ class TerritoryTrackTask(Task):
                 for old_ally_record in ally_stats_res:
                     ally_stats[old_ally_record[0]] = list(old_ally_record[1:])
 
+                if "N/A" in allied_guilds: allied_guilds.remove("N/A")
+
                 for ter in terrs:
                     guild_terr_cnt[terrs[ter]["guild"]] += 1
                     if not ter in old_terrs:
