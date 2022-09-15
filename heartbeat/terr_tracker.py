@@ -60,13 +60,13 @@ class TerritoryTrackTask(Task):
                             if not attacker in ally_stats:
                                 # { "FFA":0, "Reclaim":0, "adj help":0, "Other":0, "nom help": 0 }
                                 ally_stats[attacker] = [0]*5
-                        
-                            terr_owner = claim_owner.get(ter, "null") # null case if new ter isn't registered yet
-                            ally_stats[attacker][0] += terr_owner == "null"
+                            print(ally_stats)
+                            terr_owner = claim_owner.get(ter, "N/A") # null case if new ter isn't registered yet
+                            ally_stats[attacker][0] += terr_owner == "N/A"
                             ally_stats[attacker][1] += terr_owner == attacker
 
                             # adjusted helps (before adjusting)
-                            is_help = attacker != terr_owner and terr_owner != "null" and terr_owner in allied_guilds and not defender in allied_guilds
+                            is_help = attacker != terr_owner and terr_owner != "N/A" and terr_owner in allied_guilds and not defender in allied_guilds
                             ally_stats[attacker][2] += is_help
                             # nom help
                             ally_stats[attacker][4] += is_help
@@ -76,13 +76,13 @@ class TerritoryTrackTask(Task):
                             self.cede_task.valor_delta[attacker] += 1
 
                             ally_stats[attacker][3] += defender == terr_owner and terr_owner in allied_guilds and attacker in allied_guilds # ally-ally cede
-
+                            print(ally_stats)
                         acquired = terrs[ter]["acquired"]
                         acquired = datetime.datetime.strptime(acquired, "%Y-%m-%d %H:%M:%S")
                         
                         insert_exchanges.append(f"({int(acquired.timestamp())}, \"{defender}\", \"{attacker}\", \"{ter}\")")
                         queries.append(f"UPDATE territories SET guild=\"{attacker}\" WHERE name=\"{ter}\";")
-
+                
                 replace_ally_stats = [f"(\"{guild}\", {ally_stats[guild][0]}, {ally_stats[guild][1]}, {ally_stats[guild][2]}, {ally_stats[guild][3]}, {ally_stats[guild][4]})"
                     for guild in ally_stats]
 
