@@ -60,7 +60,8 @@ class PlayerStatsTask(Task):
                     row[idx["guild_rank"]] = f'"{guild_rank}"'
                     row[idx["firstjoin"]] = datetime.datetime.fromisoformat(stats["meta"]["firstJoin"][:-1]).timestamp()
 
-                    for cl in stats["classes"]:
+                    for cl_name in stats["characters"]:
+                        cl = stats["characters"][cl_name]
                         for dung in cl.get("dungeons", {"list": []})["list"]:
                             if dung["name"] in idx:
                                 row[idx[dung["name"]]] += dung["completed"]
@@ -80,7 +81,7 @@ class PlayerStatsTask(Task):
                         for prof in cl["professions"]:
                             xp = cl["professions"][prof]["xp"]
                             row[idx[prof]] += cl["professions"][prof]["level"] + (xp if xp else 0)/100
-
+                    
                     inserts.append(row)
                     uuid_name.append((uuid, player))
                     cnt += 1
