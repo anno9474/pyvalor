@@ -90,8 +90,20 @@ class PlayerStatsTask(Task):
                         if inserts:
                             query_stats = "REPLACE INTO player_stats VALUES " + ','.join(f"('{x[0]}', {str(x[1])}, {','.join(map(str, x[2:]))})" for x in inserts)
                             query_uuid = "REPLACE INTO uuid_name VALUES " + ','.join(f"(\'{uuid}\',\'{name}\')" for uuid, name in uuid_name)
+                            
+                            old_names = Connection.execute(f"SELECT uuid, name FROM uuid_name WHERE uuid IN ({('%s,' * 50)[:-1]})",
+                                 prepared=True, prep_values=[uuid for uuid, _ in uuid_name])
+                            old_names_dict = {uuid: old for uuid, old in old_names} # believe me, this way is still faster than tmp table join
+                            uuid_name_history_update = []
+                            for uuid, name in uuid_name:
+                                if old_names_dict[uuid] != name:
+                                    uuid_name_history_update.append((uuid, old_names_dict[uuid], name, time.time()))
+                            query_uuid_name_history = "INSERT INTO uuid_name_history VALUES " + \
+                                ','.join(f"('{uuid}','{old}','{new}',{curr_time})" for uuid, old, new, curr_time in uuid_name_history_update)
+                            
                             Connection.execute(query_stats)
                             Connection.execute(query_uuid)
+                            Connection.execute(query_uuid_name_history)
                         
                         if inserts_guild_log:
                             query_guild_log = "INSERT INTO guild_join_log VALUES " + ','.join(inserts_guild_log)

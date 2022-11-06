@@ -19,7 +19,7 @@ class Connection:
     conn = mysql.connector.connect(**_info)
 
     @classmethod
-    def execute(cls, query: str):
+    def execute(cls, query: str, prepared=False, prep_values=[]):
         if time.time() - cls.last_connected > cls.connection_live:
             cls.conn.close()
             cls.conn = mysql.connector.connect(**cls._info)
@@ -28,8 +28,12 @@ class Connection:
             logging.info("DB disconnected. Now reconnecting")
             cls.conn = mysql.connector.connect(**cls._info)
             cls.last_connected = time.time()
-        cursor = cls.conn.cursor()
-        cursor.execute(query)
+        cursor = cls.conn.cursor(prepared=prepared)
+        if prepared:
+            print(prep_values)
+            cursor.execute(query, prep_values)
+        else:
+            cursor.execute(query)
         res = list(cursor.fetchall())
         cls.conn.commit()
         cursor.close()
