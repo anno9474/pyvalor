@@ -30,7 +30,6 @@ class Connection:
             cls.last_connected = time.time()
         cursor = cls.conn.cursor(prepared=prepared)
         if prepared:
-            print(prep_values)
             cursor.execute(query, prep_values)
         else:
             cursor.execute(query)
