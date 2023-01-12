@@ -6,6 +6,7 @@ from .guild_activity import GuildActivityTask
 from .player_stats import PlayerStatsTask
 from .guild_tag import GuildTagTask
 from .cede_tracker import CedeTrackTask
+from .wc_players import WCPlayersTask
 from dotenv import load_dotenv
 import asyncio
 import os
@@ -24,6 +25,7 @@ class Heartbeat:
         GuildActivityTask(300, wsconns),
         PlayerStatsTask(3600),
         GuildTagTask(3600),
+        WCPlayersTask(60),
         cede_tracker,
     ]
     
