@@ -31,7 +31,7 @@ class WCPlayersTask(Task):
                 online_all = await Async.get("https://api.wynncraft.com/public_api.php?action=onlinePlayers&apikey="+api_key)
                 online_all = [(int(wc[2:]), player_name, start) for wc in online_all for player_name in online_all[wc] if not "request" in wc]
 
-                batch_size = 150
+                batch_size = 300
                 for i in range(0, len(online_all), batch_size):
                     insert_slice = [f"({wc},'{name}',{time_rec})" for wc, name, time_rec in online_all[i:min(len(online_all), i+batch_size)]]
                     Connection.execute(f"INSERT INTO wc_players VALUES {','.join(insert_slice)}")
