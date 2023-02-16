@@ -2,10 +2,16 @@ import asyncio
 import aiohttp
 from db import Connection
 from network import Async
+from dotenv import load_dotenv
 from .task import Task
 import time
 import sys
 import datetime
+import os
+
+load_dotenv()
+webhook_genwarlog = os.environ["GENWARLOG"]
+webhook_anowarlog = os.environ["ANOWARLOG"]
 
 class TerritoryTrackTask(Task):
     def __init__(self, sleep, wsconns, cede_task):
@@ -45,6 +51,7 @@ class TerritoryTrackTask(Task):
 
                 if "N/A" in allied_guilds: allied_guilds.remove("N/A")
 
+                guild_specific_log_xchg = []
                 for ter in terrs:
                     guild_terr_cnt[terrs[ter]["guild"]] += 1
                     if not ter in old_terrs:
@@ -82,6 +89,10 @@ class TerritoryTrackTask(Task):
                         
                         insert_exchanges.append(f"({int(acquired.timestamp())}, \"{defender}\", \"{attacker}\", \"{ter}\")")
                         queries.append(f"UPDATE territories SET guild=\"{attacker}\" WHERE name=\"{ter}\";")
+
+                        if defender == "Titans Valor" or attacker == "Titans Valor":
+                            guild_specific_log_xchg.append('{"defender": "%s", "territory": "%s", "attacker": "%s"}' % 
+                                            (defender, ter, attacker))
                 
                 replace_ally_stats = [f"(\"{guild}\", {ally_stats[guild][0]}, {ally_stats[guild][1]}, {ally_stats[guild][2]}, {ally_stats[guild][3]}, {ally_stats[guild][4]})"
                     for guild in ally_stats]
@@ -90,12 +101,17 @@ class TerritoryTrackTask(Task):
                     Connection.exec_all(queries)
                     Connection.execute("INSERT INTO terr_exchange VALUES "+','.join(insert_exchanges))
                     Connection.execute("REPLACE INTO ally_stats VALUES "+','.join(replace_ally_stats))
-                
+
+                    if len(guild_specific_log_xchg):
+                        await Async.post(webhook_anowarlog, {"content": '\n'.join(ws_payload)})
+                    await Async.post(webhook_genwarlog, {"content": '\n'.join(ws_payload)})
+
                 Connection.execute("INSERT INTO terr_count VALUES "+
                     ','.join(f"({int(time.time())}, \"{k}\", {guild_terr_cnt[k]})" for k in guild_terr_cnt))
 
                 for ws in self.wsconns:
                     await ws.send('{"type":"terr","data":'+f"[{','.join(ws_payload)}]" + "}")
+                # post to websocket
 
                 end = time.time()
                 print(datetime.datetime.now().ctime(), "TERRITORY TRACKER", end-start, "s")
