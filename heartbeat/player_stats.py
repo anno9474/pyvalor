@@ -86,7 +86,7 @@ class PlayerStatsTask(Task):
                     character_data = stats["characters"]
                     for cl_name in character_data:
                         cl = character_data[cl_name]
-                        cl_type = character_data["type"]
+                        cl_type = cl["type"]
 
                         warcount = cl["wars"]
                         if uuid in prev_warcounts and cl_name in prev_warcounts[uuid]:
