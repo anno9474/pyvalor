@@ -96,7 +96,7 @@ class PlayerStatsTask(Task):
                                 inserts_war_deltas.append((uuid, cl_name, warcount-old_warcount, cl_type))
                                 inserts_war_update.append((uuid, cl_name, warcount, cl_type))
                         else:
-                            inserts_war_update.append((uuid, cl_name, warcount))
+                            inserts_war_update.append((uuid, cl_name, warcount, cl_type))
 
                         if cl["dungeons"]:
                             for dung, dung_count in cl["dungeons"]["list"].items():
