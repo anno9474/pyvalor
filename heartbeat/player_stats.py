@@ -86,14 +86,15 @@ class PlayerStatsTask(Task):
                     character_data = stats["characters"]
                     for cl_name in character_data:
                         cl = character_data[cl_name]
+                        cl_type = character_data["type"]
 
                         warcount = cl["wars"]
                         if uuid in prev_warcounts and cl_name in prev_warcounts[uuid]:
                             old_warcount = prev_warcounts[uuid][cl_name]
                             # if war count hasn't changed don't update a thing
                             if warcount != old_warcount:
-                                inserts_war_deltas.append((uuid, cl_name, warcount-old_warcount))
-                                inserts_war_update.append((uuid, cl_name, warcount))
+                                inserts_war_deltas.append((uuid, cl_name, warcount-old_warcount, cl_type))
+                                inserts_war_update.append((uuid, cl_name, warcount, cl_type))
                         else:
                             inserts_war_update.append((uuid, cl_name, warcount))
 
@@ -129,9 +130,9 @@ class PlayerStatsTask(Task):
                             curr_time = time.time()
                             query_stats = "REPLACE INTO player_stats VALUES " + ','.join(f"('{x[0]}', {str(x[1])}, {','.join(map(str, x[2:]))})" for x in inserts)
                             query_uuid = "REPLACE INTO uuid_name VALUES " + ','.join(f"(\'{uuid}\',\'{name}\')" for uuid, name in uuid_name)
-                            query_wars_update  = "REPLACE INTO cumu_warcounts VALUES " + ','.join(f"(\'{uuid}\',\'{character_id}\', {curr_time}, {warcount})" 
+                            query_wars_update  = "REPLACE INTO cumu_warcounts VALUES " + ','.join(f"(\'{uuid}\',\'{character_id}\', {curr_time}, {warcount}, \'{cl_type}\')" 
                                                                                                     for uuid, character_id, warcount in inserts_war_update)
-                            query_wars_delta  = "INSERT INTO delta_warcounts VALUES " + ','.join(f"(\'{uuid}\',\'{character_id}\', {curr_time}, {wardiff})" 
+                            query_wars_delta  = "INSERT INTO delta_warcounts VALUES " + ','.join(f"(\'{uuid}\',\'{character_id}\', {curr_time}, {wardiff}, \'{cl_type}\')" 
                                                                         for uuid, character_id, wardiff in inserts_war_deltas)
                             if inserts_war_update:
                                 Connection.execute(query_wars_update)
