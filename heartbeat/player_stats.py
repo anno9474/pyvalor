@@ -22,7 +22,7 @@ class PlayerStatsTask(Task):
         self.continuous_task.cancel()
 
     def null_or_value(x): 
-        if type(x) != type(None): return x
+        if type(x) == type(None): return 0
         return x
 
     def run(self):
