@@ -25,6 +25,16 @@ class PlayerStatsTask(Task):
         if type(x) == type(None): return 0
         return x
 
+    async def get_uuid(player: str):
+        if "-" in player: return False
+        exist = Connection.execute(f"SELECT * FROM uuid_name WHERE name='{player}' LIMIT 1")
+        if not exist:
+            uuid = (await Async.get(f"https://api.mojang.com/users/profiles/minecraft/{player}"))["id"]
+            Connection.execute(f"INSERT INTO uuid_name VALUES ('{uuid}', '{player}')")
+        else:
+            return exist[0][0]
+        return uuid[:8]+'-'+uuid[8:12]+'-'+uuid[12:16]+'-'+uuid[16:20]+'-'+uuid[20:]
+        
     def run(self):
         self.finished = False
         idx = {'uuid': 0, 'firstjoin': 1, 'Decrepit Sewers': 2, 'Infested Pit': 3, 'Lost Sanctuary': 4, 'Underworld Crypt': 5, 'Sand-Swept Tomb': 6, 'Ice Barrows': 7, 'Undergrowth Ruins': 8, "Galleon's Graveyard": 9, 'Fallen Factory': 10, 'Eldritch Outlook': 11,'Corrupted Decrepit Sewers': 12, 'Corrupted Infested Pit': 13, 'Corrupted Lost Sanctuary': 14, 'Corrupted Underworld Crypt': 15, 'Corrupted Sand-Swept Tomb': 16, 'Corrupted Ice Barrows': 17, 'Corrupted Undergrowth Ruins': 18, 'itemsIdentified': 19, 'chestsFound': 20, 'blocksWalked': 21, 'logins': 22, 'playtime': 23, 'Alchemism': 24, 'Armouring': 25, 'combat': 26, 'Cooking': 27, 'Farming': 28, 'Fishing': 29, 'Jeweling': 30, 'Mining': 31, 'Scribing': 32, 'Tailoring': 33, 'Weaponsmithing': 34, 'Woodcutting': 35, 'Woodworking': 36, 'Nest of the Grootslangs': 37, 'The Canyon Colossus': 38, "mobsKilled": 39, "deaths": 40, "guild": 41, "Orphion's Nexus of Light": 42, "guild_rank": 43, "The Nameless Anomaly": 44, "Corrupted Galleon's Graveyard": 45}
@@ -63,8 +73,14 @@ class PlayerStatsTask(Task):
                     try:
                         stats = await Async.get(uri)
                     except:
-                        print(uri, "borked")
-                        continue
+                        print(player, "fallback to mojang")
+                        try: 
+                            uuid = await get_uuid(player)
+                            uri = f"https://api.wynncraft.com/v3/player/{uuid}?fullResult=True&apikey="+api_key
+                            stats = await Async.get(uri)
+                        except:
+                            print(uri, "uuid borked")
+                            continue
                     row = [0]*len(idx)
                     if not stats or not "uuid" in stats:
                         print(player, "no uuid, skip")
