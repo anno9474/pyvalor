@@ -43,6 +43,7 @@ class Async:
                 res = await Async.session.get(uri)
                 return await res.json()
             except Exception as e:
+                if "v3/player" in uri: raise e # TODO: wait until wynnapi fixes unhelpful error 500 messages
                 print(uri, "borked")
                 await asyncio.sleep(TRY_SLEEP)
             t -= 1
