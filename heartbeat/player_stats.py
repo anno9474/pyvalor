@@ -21,6 +21,10 @@ class PlayerStatsTask(Task):
         self.finished = True
         self.continuous_task.cancel()
 
+    def null_or_value(x): 
+        if type(x) != type(None): return x
+        return x
+
     def run(self):
         self.finished = False
         idx = {'uuid': 0, 'firstjoin': 1, 'Decrepit Sewers': 2, 'Infested Pit': 3, 'Lost Sanctuary': 4, 'Underworld Crypt': 5, 'Sand-Swept Tomb': 6, 'Ice Barrows': 7, 'Undergrowth Ruins': 8, "Galleon's Graveyard": 9, 'Fallen Factory': 10, 'Eldritch Outlook': 11,'Corrupted Decrepit Sewers': 12, 'Corrupted Infested Pit': 13, 'Corrupted Lost Sanctuary': 14, 'Corrupted Underworld Crypt': 15, 'Corrupted Sand-Swept Tomb': 16, 'Corrupted Ice Barrows': 17, 'Corrupted Undergrowth Ruins': 18, 'itemsIdentified': 19, 'chestsFound': 20, 'blocksWalked': 21, 'logins': 22, 'playtime': 23, 'Alchemism': 24, 'Armouring': 25, 'combat': 26, 'Cooking': 27, 'Farming': 28, 'Fishing': 29, 'Jeweling': 30, 'Mining': 31, 'Scribing': 32, 'Tailoring': 33, 'Weaponsmithing': 34, 'Woodcutting': 35, 'Woodworking': 36, 'Nest of the Grootslangs': 37, 'The Canyon Colossus': 38, "mobsKilled": 39, "deaths": 40, "guild": 41, "Orphion's Nexus of Light": 42, "guild_rank": 43, "The Nameless Anomaly": 44, "Corrupted Galleon's Graveyard": 45}
@@ -108,13 +112,13 @@ class PlayerStatsTask(Task):
                                 if raid in idx:
                                     row[idx[raid]] += raid_count
 
-                        row[idx["itemsIdentified"]] += cl.get("itemsIdentified", 0)
-                        row[idx["mobsKilled"]] += cl.get("mobsKilled", 0)
-                        row[idx["chestsFound"]] += cl.get("chestsFound", 0)
-                        row[idx["blocksWalked"]] += cl.get("blocksWalked", 0)
-                        row[idx["logins"]] += cl.get("logins", 0)
-                        row[idx["deaths"]] += cl.get("deaths", 0)
-                        row[idx["playtime"]] += cl.get("playtime", 0)
+                        row[idx["itemsIdentified"]] += PlayerStatsTask.null_or_value(cl.get("itemsIdentified", 0))
+                        row[idx["mobsKilled"]] += PlayerStatsTask.null_or_value(cl.get("mobsKilled", 0))
+                        row[idx["chestsFound"]] += PlayerStatsTask.null_or_value(cl.get("chestsFound", 0))
+                        row[idx["blocksWalked"]] += PlayerStatsTask.null_or_value(cl.get("blocksWalked", 0))
+                        row[idx["logins"]] += PlayerStatsTask.null_or_value(cl.get("logins", 0))
+                        row[idx["deaths"]] += PlayerStatsTask.null_or_value(cl.get("deaths", 0))
+                        row[idx["playtime"]] += PlayerStatsTask.null_or_value(cl.get("playtime", 0))
                         # row[idx["combat"]] += cl["level"] todo combat lvl is gone
                         
                         for prof in cl.get("professions", []):
