@@ -75,7 +75,7 @@ class PlayerStatsTask(Task):
                     except:
                         print(player, "fallback to mojang")
                         try: 
-                            uuid = await get_uuid(player)
+                            uuid = await PlayerStatsTask.get_uuid(player)
                             uri = f"https://api.wynncraft.com/v3/player/{uuid}?fullResult=True&apikey="+api_key
                             stats = await Async.get(uri)
                         except:
