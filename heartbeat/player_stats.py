@@ -108,16 +108,17 @@ class PlayerStatsTask(Task):
                                 if raid in idx:
                                     row[idx[raid]] += raid_count
 
-                        row[idx["itemsIdentified"]] += cl["itemsIdentified"]
-                        row[idx["mobsKilled"]] += cl["mobsKilled"]
-                        row[idx["chestsFound"]] += cl["chestsFound"]
-                        row[idx["blocksWalked"]] += cl["blocksWalked"]
-                        row[idx["logins"]] += cl["logins"]
-                        row[idx["deaths"]] += cl["death"]
-                        row[idx["playtime"]] += cl["playtime"]
+                        row[idx["itemsIdentified"]] += cl.get("itemsIdentified", 0)
+                        row[idx["mobsKilled"]] += cl.get("mobsKilled", 0)
+                        row[idx["chestsFound"]] += cl.get("chestsFound", 0)
+                        row[idx["blocksWalked"]] += cl.get("blocksWalked", 0)
+                        row[idx["logins"]] += cl.get("logins", 0)
+                        row[idx["deaths"]] += cl.get("deaths", 0)
+                        row[idx["playtime"]] += cl.get("playtime", 0)
                         # row[idx["combat"]] += cl["level"] todo combat lvl is gone
                         
-                        for prof in cl["professions"]:
+                        for prof in cl.get("professions", []):
+                            if not prof in cl or not "xpPercent" in cl["professions"][prof]: continue
                             xp = cl["professions"][prof]["xpPercent"]
                             row[idx[prof]] += cl["professions"][prof]["level"] + (xp if xp else 0)/100
                     
