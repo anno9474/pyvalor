@@ -101,7 +101,12 @@ class PlayerStatsTask(Task):
 
                     row[idx["guild"]] = f'"{guild}"'
                     row[idx["guild_rank"]] = f'"{guild_rank}"'
+
+                    if not "firstJoin" in stats: continue
                     row[idx["firstjoin"]] = datetime.datetime.fromisoformat(stats["firstJoin"]).timestamp()
+
+                    if not "characters" in stats:
+                        continue
 
                     character_data = stats["characters"]
                     for cl_name in character_data:
