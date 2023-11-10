@@ -37,7 +37,16 @@ class PlayerStatsTask(Task):
         
     def run(self):
         self.finished = False
-        idx = {'uuid': 0, 'firstjoin': 1, 'Decrepit Sewers': 2, 'Infested Pit': 3, 'Lost Sanctuary': 4, 'Underworld Crypt': 5, 'Sand-Swept Tomb': 6, 'Ice Barrows': 7, 'Undergrowth Ruins': 8, "Galleon's Graveyard": 9, 'Fallen Factory': 10, 'Eldritch Outlook': 11,'Corrupted Decrepit Sewers': 12, 'Corrupted Infested Pit': 13, 'Corrupted Lost Sanctuary': 14, 'Corrupted Underworld Crypt': 15, 'Corrupted Sand-Swept Tomb': 16, 'Corrupted Ice Barrows': 17, 'Corrupted Undergrowth Ruins': 18, 'itemsIdentified': 19, 'chestsFound': 20, 'blocksWalked': 21, 'logins': 22, 'playtime': 23, 'Alchemism': 24, 'Armouring': 25, 'combat': 26, 'Cooking': 27, 'Farming': 28, 'Fishing': 29, 'Jeweling': 30, 'Mining': 31, 'Scribing': 32, 'Tailoring': 33, 'Weaponsmithing': 34, 'Woodcutting': 35, 'Woodworking': 36, 'Nest of the Grootslangs': 37, 'The Canyon Colossus': 38, "mobsKilled": 39, "deaths": 40, "guild": 41, "Orphion's Nexus of Light": 42, "guild_rank": 43, "The Nameless Anomaly": 44, "Corrupted Galleon's Graveyard": 45, "Timelost Sanctum": 46}
+        idx = {'uuid': 0, 'firstjoin': 1, 'Decrepit Sewers': 2, 'Infested Pit': 3, 'Lost Sanctuary': 4, 'Underworld Crypt': 5, 
+               'Sand-Swept Tomb': 6, 'Ice Barrows': 7, 'Undergrowth Ruins': 8, "Galleon's Graveyard": 9, 'Fallen Factory': 10, 
+               'Eldritch Outlook': 11,'Corrupted Decrepit Sewers': 12, 'Corrupted Infested Pit': 13, 'Corrupted Lost Sanctuary': 14, 
+               'Corrupted Underworld Crypt': 15, 'Corrupted Sand-Swept Tomb': 16, 'Corrupted Ice Barrows': 17, 'Corrupted Undergrowth Ruins': 18, 
+               'itemsIdentified': 19, 'chestsFound': 20, 'blocksWalked': 21, 'logins': 22, 'playtime': 23, 'Alchemism': 24, 'Armouring': 25, 
+               'combat': 26, 'Cooking': 27, 'Farming': 28, 'Fishing': 29, 'Jeweling': 30, 'Mining': 31, 'Scribing': 32, 'Tailoring': 33, 
+               'Weaponsmithing': 34, 'Woodcutting': 35, 'Woodworking': 36, 'Nest of the Grootslangs': 37, 'The Canyon Colossus': 38, 
+               "mobsKilled": 39, "deaths": 40, "guild": 41, "Orphion's Nexus of Light": 42, "guild_rank": 43, "The Nameless Anomaly": 44, 
+               "Corrupted Galleon's Graveyard": 45, "Timelost Sanctum": 46, "lastjoin": 47}
+        
         async def player_stats_task():
             while not self.finished:
                 print(datetime.datetime.now().ctime(), "PLAYER STATS TRACK START")
@@ -101,6 +110,9 @@ class PlayerStatsTask(Task):
 
                     row[idx["guild"]] = f'"{guild}"'
                     row[idx["guild_rank"]] = f'"{guild_rank}"'
+
+                    if not "lastJoin" in stats: continue
+                    row[idx["lastjoin"]] = datetime.datetime.fromisoformat(stats["lastJoin"]).timestamp()
 
                     if not "firstJoin" in stats: continue
                     row[idx["firstjoin"]] = datetime.datetime.fromisoformat(stats["firstJoin"]).timestamp()
