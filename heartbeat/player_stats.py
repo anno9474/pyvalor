@@ -154,7 +154,9 @@ class PlayerStatsTask(Task):
                         row[idx["playtime"]] += PlayerStatsTask.null_or_value(cl.get("playtime", 0))
                         # row[idx["combat"]] += cl["level"] todo combat lvl is gone
                         
-                        for prof in cl.get("professions", []):
+                        if not cl.get("professions"): continue
+
+                        for prof in cl.get("professions"):
                             if not prof in cl or not "xpPercent" in cl["professions"][prof]: continue
                             xp = cl["professions"][prof]["xpPercent"]
                             row[idx[prof]] += cl["professions"][prof]["level"] + (xp if xp else 0)/100
