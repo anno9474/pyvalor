@@ -34,7 +34,7 @@ class TerritoryTrackTask(Task):
                 terrs = await Async.get(URL)
                 old_terrs = {x[0]: x[1] for x in Connection.execute("SELECT * FROM territories")}
 
-                guild_terr_cnt = {terrs[terr]["guild"]: 0 for terr in terrs}
+                guild_terr_cnt = {terrs[terr]["guild"]["name"]: 0 for terr in terrs}
 
                 queries = []
                 ws_payload = []
@@ -53,13 +53,13 @@ class TerritoryTrackTask(Task):
 
                 guild_specific_log_xchg = []
                 for ter in terrs:
-                    guild_terr_cnt[terrs[ter]["guild"]] += 1
+                    guild_terr_cnt[terrs[ter]["guild"]["name"]] += 1
                     if not ter in old_terrs:
                         # new territory. should rarely happen
                         queries.append(f"INSERT INTO territories VALUES (\"{ter}\", \"{terrs[ter]['guild']}\", \"none\");")
 
-                    elif terrs[ter]["guild"] != old_terrs[ter]:
-                        defender, attacker = old_terrs[ter], terrs[ter]['guild']
+                    elif terrs[ter]["guild"]["name"] != old_terrs[ter]:
+                        defender, attacker = old_terrs[ter], terrs[ter]['guild']["name"]
                         ws_payload.append('{"defender": "%s", "territory": "%s", "attacker": "%s"}' % 
                                             (defender, ter, attacker))
                         # Alliance stuff
