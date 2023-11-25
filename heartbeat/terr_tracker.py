@@ -85,7 +85,7 @@ class TerritoryTrackTask(Task):
                             ally_stats[attacker][3] += defender == terr_owner and terr_owner in allied_guilds and attacker in allied_guilds # ally-ally cede
 
                         acquired = terrs[ter]["acquired"]
-                        acquired = datetime.datetime.strptime(acquired, "%Y-%m-%d %H:%M:%S")
+                        acquired = datetime.datetime.fromisoformat(acquired)
                         
                         insert_exchanges.append(f"({int(acquired.timestamp())}, \"{defender}\", \"{attacker}\", \"{ter}\")")
                         queries.append(f"UPDATE territories SET guild=\"{attacker}\" WHERE name=\"{ter}\";")
