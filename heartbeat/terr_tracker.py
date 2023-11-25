@@ -30,8 +30,8 @@ class TerritoryTrackTask(Task):
                 print(datetime.datetime.now().ctime(), "TERRITORY TRACK START")
                 start = time.time()
 
-                URL = "https://api.wynncraft.com/public_api.php?action=territoryList"
-                terrs = (await Async.get(URL))["territories"]
+                URL = "https://api.wynncraft.com/v3/guild/list/territory"
+                terrs = await Async.get(URL)
                 old_terrs = {x[0]: x[1] for x in Connection.execute("SELECT * FROM territories")}
 
                 guild_terr_cnt = {terrs[terr]["guild"]: 0 for terr in terrs}

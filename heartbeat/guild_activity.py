@@ -27,8 +27,12 @@ class GuildActivityTask(Task):
                 print(datetime.datetime.now().ctime(), "GUILD ACTIVITY TRACK START")
                 start = time.time()
 
-                current_guild_members = (await Async.get("https://api.wynncraft.com/public_api.php?action=guildStats&command=Titans%20Valor"))["members"]
-                current_guild_members = {x["name"] for x in current_guild_members}
+                guild_data_members = (await Async.get("https://api.wynncraft.com/v3/guild/Titans%20Valor"))["members"]
+                current_guild_members = set()
+                for rank in guild_data_members:
+                    if type(guild_data_members[rank]) != dict: continue
+                    current_guild_members |= guild_data_members[rank].keys()
+
                 old_guild_members = {x[1] for x in Connection.execute(f"SELECT * FROM guild_member_cache") if x[0] == "Titans Valor"}
                 left = [f'"{x}"' for x in old_guild_members-current_guild_members]
                 join = [f'"{x}"' for x in current_guild_members-old_guild_members]
@@ -41,8 +45,8 @@ class GuildActivityTask(Task):
                 Connection.execute("DELETE FROM guild_member_cache WHERE guild='Titans Valor'")
                 Connection.execute("INSERT INTO guild_member_cache VALUES "+",".join(f"('Titans Valor','{x}')" for x in current_guild_members))
                 
-                online_all = await Async.get("https://api.wynncraft.com/public_api.php?action=onlinePlayers")
-                online_all = {y for x in online_all for y in online_all[x] if not "request" in x}
+                online_all = await Async.get("https://api.wynncraft.com/v3/player")
+                online_all = {x for x in online_all["players"]}
 
                 inserts = []
 

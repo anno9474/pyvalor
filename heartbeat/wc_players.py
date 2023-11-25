@@ -25,6 +25,7 @@ class WCPlayersTask(Task):
         self.finished = False
         async def player_stats_task():
             while not self.finished:
+                break # I don't think this is used anymore?
                 print(datetime.datetime.now().ctime(), "WC PLAYERS TRACK START")
                 start = time.time()
 

@@ -23,7 +23,7 @@ class GuildTagTask(Task):
                 print(datetime.datetime.now().ctime(), "GUILD TAG NAME TASK START")
                 start = time.time()
 
-                updated_guilds = set((await Async.get("https://api.wynncraft.com/public_api.php?action=guildList"))["guilds"]) # like 200K mem max
+                updated_guilds = set([x["name"] for x in await Async.get("https://api.wynncraft.com/v3/guild/list/guild")]) # like 200K mem max
                 res = Connection.execute("SELECT guild FROM guild_tag_name")
                 current_guilds = set(x[0] for x in res)
                 current_guilds_lower = {x.lower().strip() for x in current_guilds}
@@ -37,9 +37,15 @@ class GuildTagTask(Task):
                 print(difference)
 
                 for new_guild in difference:
-                    req = await Async.get("https://api.wynncraft.com/public_api.php?action=guildStats&command="+new_guild)
+                    req = await Async.get("https://api.wynncraft.com/v3/guild/"+new_guild)
                     tag = req["prefix"]
-                    n_members = len(req["members"])
+                    
+                    current_guild_members = set()
+                    for rank in req["members"]:
+                        if type(req["members"][rank]) != dict: continue
+                        current_guild_members |= req["members"][rank].keys()
+
+                    n_members = len(current_guild_members)
                     inserts.append(f"('{new_guild}','{tag}',{n_members})")
                     await asyncio.sleep(0.3)
 

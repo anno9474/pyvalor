@@ -22,9 +22,13 @@ class GXPTrackerTask(Task):
                 print(datetime.datetime.now().ctime(), "GXP START")
                 start = time.time()
 
-                URL = "https://api.wynncraft.com/public_api.php?action=guildStats&command=Titans Valor"
+                URL = "https://api.wynncraft.com/v3/guild/Titans Valor"
                 g = await Async.get(URL)
-                members = g["members"]
+                members = []
+                for rank in g["members"]:
+                    if type(g["members"][rank]) != dict: continue
+                    for member_name in g["members"][rank]:
+                        members.append({"name": member_name, **g["members"][rank][member_name]})
 
                 query = Connection.execute(f"SELECT * FROM user_total_xps")
                 uuid_to_xp = {x[4]:x[:4] for x in query} # name xp lastxp guild

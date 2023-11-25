@@ -52,10 +52,10 @@ class PlayerStatsTask(Task):
                 print(datetime.datetime.now().ctime(), "PLAYER STATS TRACK START")
                 start = time.time()
 
-                # online_all = await Async.get("https://api.wynncraft.com/v3/player")
-                # online_all = {name for name in online_all.get("players", [])}
-                online_all = await Async.get("https://api.wynncraft.com/public_api.php?action=onlinePlayers")
-                online_all = {y for x in online_all for y in online_all[x] if not "request" in x}
+                online_all = await Async.get("https://api.wynncraft.com/v3/player")
+                online_all = {name for name in online_all.get("players", [])}
+                # online_all = await Async.get("https://api.wynncraft.com/public_api.php?action=onlinePlayers")
+                # online_all = {y for x in online_all for y in online_all[x] if not "request" in x}
 
                 inserts = []
                 uuid_name = []

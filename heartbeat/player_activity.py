@@ -3,6 +3,7 @@ import aiohttp
 from db import Connection
 from network import Async
 from .task import Task
+from collections import defaultdict
 import time
 import datetime
 
@@ -19,32 +20,24 @@ class PlayerActivityTask(Task):
         async def player_activity_task():
             print(datetime.datetime.now().ctime(), "PLAYER ACTIVITY TRACK START")
             start = time.time()
-            URL = "https://api.wynncraft.com/public_api.php?action=guildStats&command="
-            online_all = await Async.get("https://api.wynncraft.com/public_api.php?action=onlinePlayers")
-            online_all = {y for x in online_all for y in online_all[x] if not "request" in x}
+            online_all = await Async.get("https://api.wynncraft.com/v3/player")
+            online_all = {x for x in online_all["players"]}
 
             inserts = []
-            member_cache_refresh = []
 
-            guilds = {g[0] for g in Connection.execute("SELECT * FROM guild_list")}
+            res = Connection.execute('''SELECT uuid_name.name, player_stats.guild, player_stats.uuid FROM guild_list
+LEFT JOIN player_stats ON guild_list.guild=player_stats.guild
+LEFT JOIN uuid_name ON uuid_name.uuid=player_stats.uuid;''')
+            
+            player_to_guild = {name: (guild, uuid) for name, guild, uuid in res}
+            intersection = online_all & player_to_guild.keys()
 
-            for guild in guilds:
-                g = await Async.get(URL+guild)
-                try:
-                    members = {x["name"]: x["uuid"] for x in g["members"] if "name" in x}
-                except:
-                    print(guild, "does not exist?")
-                    continue
-                for name in members:
-                    member_cache_refresh.append((guild, name))
-                    if name in online_all: 
-                        inserts.append(f"(\"{name}\", \"{guild}\", {int(time.time())}, \"{members[name]}\")")
+            for player_name in intersection:
+                guild, uuid = player_to_guild[player_name]
+                inserts.append(f"(\"{player_name}\", \"{guild}\", {int(time.time())}, \"{uuid}\")")
 
-            Connection.execute(f"INSERT INTO activity_members VALUES {','.join(inserts)}")
-
-            # clear the cache
-            Connection.execute(f"DELETE FROM guild_member_cache")
-            Connection.execute(f"INSERT INTO guild_member_cache VALUES "+ ','.join(f"(\"{x[0]}\", \"{x[1]}\")" for x in member_cache_refresh))
+            for i in range(0, 128, len(inserts)):
+                Connection.execute(f"INSERT INTO activity_members VALUES {','.join(inserts[i:i+128])}")
 
             end = time.time()
             print(datetime.datetime.now().ctime(), "PLAYER ACTIVITY TASK", end-start, "s")
