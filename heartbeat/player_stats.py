@@ -56,6 +56,9 @@ class PlayerStatsTask(Task):
                 online_all = {name for name in online_all.get("players", [])}
                 # online_all = await Async.get("https://api.wynncraft.com/public_api.php?action=onlinePlayers")
                 # online_all = {y for x in online_all for y in online_all[x] if not "request" in x}
+                queued_players = [x[0] for x in Connection.execute("SELECT uuid FROM player_stats_queue")]
+                Connection.execute("DELETE FROM player_stats_queue") 
+                search_players = online_all & set(queued_players)
 
                 inserts = []
                 uuid_name = []
@@ -77,7 +80,7 @@ class PlayerStatsTask(Task):
                 inserts_war_deltas = []
                 inserts_guild_log = []
 
-                for player in online_all:
+                for player in search_players:
                     uri = f"https://api.wynncraft.com/v3/player/{player}?fullResult=True&apikey="+api_key
                     try:
                         stats = await Async.get(uri)
