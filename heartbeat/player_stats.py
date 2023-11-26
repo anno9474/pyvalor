@@ -58,7 +58,7 @@ class PlayerStatsTask(Task):
                 # online_all = {y for x in online_all for y in online_all[x] if not "request" in x}
                 queued_players = [x[0] for x in Connection.execute("SELECT uuid FROM player_stats_queue")]
                 Connection.execute("DELETE FROM player_stats_queue") 
-                search_players = online_all & set(queued_players)
+                search_players = online_all | set(queued_players)
 
                 inserts = []
                 uuid_name = []
