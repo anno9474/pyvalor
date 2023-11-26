@@ -7,6 +7,7 @@ from .task import Task
 import time
 import datetime
 import os
+from log import logger
 
 load_dotenv()
 webhook = os.environ["JOINLEAVE"]
@@ -24,7 +25,7 @@ class GuildActivityTask(Task):
         self.finished = False
         async def guild_activity_task():
             while not self.finished:
-                print(datetime.datetime.now().ctime(), "GUILD ACTIVITY TRACK START")
+                logger.info("GUILD ACTIVITY TRACK START")
                 start = time.time()
 
                 guild_data_members = (await Async.get("https://api.wynncraft.com/v3/guild/Titans%20Valor"))["members"]
@@ -63,10 +64,10 @@ class GuildActivityTask(Task):
                     ','.join(f"(\"{guild}\", {guild_member_cnt[guild]}, {now})" for guild in guild_member_cnt))
 
                 end = time.time()
-                print(datetime.datetime.now().ctime(), "GUILD ACTIVITY TASK", end-start, "s")
+                logger.info("GUILD ACTIVITY TASK"+f" {end-start}s")
                 
                 await asyncio.sleep(self.sleep)
         
-            print(datetime.datetime.now().ctime(), "GuildActivityTask finished")
+            logger.info("GuildActivityTask finished")
 
         self.continuous_task = asyncio.get_event_loop().create_task(self.continuously(guild_activity_task))

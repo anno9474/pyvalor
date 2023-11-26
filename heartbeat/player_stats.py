@@ -9,6 +9,7 @@ import sys
 from dotenv import load_dotenv
 import json
 import os
+from log import logger
 
 load_dotenv()
 api_key = os.environ["API_KEY"]
@@ -49,7 +50,7 @@ class PlayerStatsTask(Task):
         
         async def player_stats_task():
             while not self.finished:
-                print(datetime.datetime.now().ctime(), "PLAYER STATS TRACK START")
+                logger.info("PLAYER STATS TRACK START")
                 start = time.time()
 
                 online_all = await Async.get("https://api.wynncraft.com/v3/player")
@@ -219,16 +220,16 @@ class PlayerStatsTask(Task):
                         await asyncio.sleep(0.3)
 
                     except Exception as e:
-                        print(datetime.datetime.now().ctime(), f"PLAYER STATS TASK ERROR")
-                        print(e.with_traceback())
+                        logger.info(f"PLAYER STATS TASK ERROR")
+                        logger.exception(e)
                         player_idx += 1
                         print(f"PLAYER IS {search_players[player_idx]}")
 
                 end = time.time()
-                print(datetime.datetime.now().ctime(), "PLAYER STATS TASK", end-start, "s")
+                logger.info("PLAYER STATS TASK"+f" {end-start}s")
                 
                 await asyncio.sleep(self.sleep)
         
-            print(datetime.datetime.now().ctime(), "PlayerStatsTask finished")
+            logger.info("PlayerStatsTask finished")
 
         self.continuous_task = asyncio.get_event_loop().create_task(self.continuously(player_stats_task))

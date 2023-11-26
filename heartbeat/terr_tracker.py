@@ -8,6 +8,7 @@ import time
 import sys
 import datetime
 import os
+from log import logger
 
 load_dotenv()
 webhook_genwarlog = os.environ["GENWARLOG"]
@@ -27,7 +28,7 @@ class TerritoryTrackTask(Task):
         self.finished = False
         async def terr_tracker_task():
             while not self.finished:
-                print(datetime.datetime.now().ctime(), "TERRITORY TRACK START")
+                logger.info("TERRITORY TRACK START")
                 start = time.time()
 
                 URL = "https://api.wynncraft.com/v3/guild/list/territory"
@@ -114,11 +115,11 @@ class TerritoryTrackTask(Task):
                 # post to websocket
 
                 end = time.time()
-                print(datetime.datetime.now().ctime(), "TERRITORY TRACKER", end-start, "s")
+                logger.info("TERRITORY TRACKER"+f" {end-start}s")
 
                 await asyncio.sleep(self.sleep)
         
-            print(datetime.datetime.now().ctime(), "TerritoryTrackTask finished")
+            logger.info("TerritoryTrackTask finished")
 
         self.continuous_task = asyncio.get_event_loop().create_task(self.continuously(terr_tracker_task))
         

@@ -4,7 +4,7 @@ from db import Connection
 from network import Async
 from .task import Task
 import time
-import sys
+from log import logger
 import datetime
 
 class CedeTrackTask(Task):
@@ -23,7 +23,7 @@ class CedeTrackTask(Task):
         self.finished = False
         async def terr_tracker_task():
             while not self.finished:
-                print(datetime.datetime.now().ctime(), "CEDE TRACKER START")
+                logger.info("CEDE TRACKER START")
                 start = time.time()
 
                 URL = "https://api.wynncraft.com/public_api.php?action=statsLeaderboard&type=guild&timeframe=alltime"
@@ -66,11 +66,11 @@ class CedeTrackTask(Task):
                 self.valor_delta = {}
 
                 end = time.time()
-                print(datetime.datetime.now().ctime(), "CEDE TRACKER", end-start, "s")
+                logger.info("CEDE TRACKER"+f" {end-start}s")
 
                 await asyncio.sleep(self.sleep)
         
-            print(datetime.datetime.now().ctime(), "Cede Tracker Task finished")
+            logger.warn("Cede Tracker Task finished")
 
         self.continuous_task = asyncio.get_event_loop().create_task(self.continuously(terr_tracker_task))
         

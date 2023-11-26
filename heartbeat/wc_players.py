@@ -9,6 +9,7 @@ import sys
 from dotenv import load_dotenv
 import json
 import os
+from log import logger
 
 load_dotenv()
 api_key = os.environ["API_KEY"]
@@ -26,7 +27,7 @@ class WCPlayersTask(Task):
         async def player_stats_task():
             while not self.finished:
                 break # I don't think this is used anymore?
-                print(datetime.datetime.now().ctime(), "WC PLAYERS TRACK START")
+                logger.info("WC PLAYERS TRACK START")
                 start = time.time()
 
                 online_all = await Async.get("https://api.wynncraft.com/public_api.php?action=onlinePlayers&apikey="+api_key)
@@ -38,10 +39,10 @@ class WCPlayersTask(Task):
                     Connection.execute(f"INSERT INTO wc_players VALUES {','.join(insert_slice)}")
 
                 end = time.time()
-                print(datetime.datetime.now().ctime(), "WC PLAYERS TASK", end-start, "s")
+                logger.info("WC PLAYERS TASK"+f" {end-start}s")
                 
                 await asyncio.sleep(self.sleep)
         
-            print(datetime.datetime.now().ctime(), "WCPlayers finished")
+            logger.info("WCPlayers finished")
 
         self.continuous_task = asyncio.get_event_loop().create_task(self.continuously(player_stats_task))

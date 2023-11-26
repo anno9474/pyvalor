@@ -6,6 +6,7 @@ from .task import Task
 import datetime
 import time
 import sys
+from log import logger
 
 class GXPTrackerTask(Task):
     def __init__(self, sleep):
@@ -19,7 +20,7 @@ class GXPTrackerTask(Task):
         self.finished = False
         async def gxp_tracker_task():
             while not self.finished:
-                print(datetime.datetime.now().ctime(), "GXP START")
+                logger.info("GXP START")
                 start = time.time()
 
                 URL = "https://api.wynncraft.com/v3/guild/Titans Valor"
@@ -63,10 +64,10 @@ class GXPTrackerTask(Task):
                     Connection.exec_all(new_queries)
                 
                 end = time.time()
-                print(datetime.datetime.now().ctime(), "GXP TRACKER", end-start, "s")
+                logger.info("GXP TRACKER"+f" {end-start}s")
 
                 await asyncio.sleep(self.sleep)
         
-            print(datetime.datetime.now().ctime(), "GXPTrackerTask finished")
+            logger.info("GXPTrackerTask finished")
 
         self.continuous_task = asyncio.get_event_loop().create_task(self.continuously(gxp_tracker_task))

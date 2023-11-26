@@ -6,6 +6,7 @@ from .task import Task
 from collections import defaultdict
 import time
 import datetime
+from log import logger
 
 class PlayerActivityTask(Task):
     def __init__(self, sleep):
@@ -18,7 +19,7 @@ class PlayerActivityTask(Task):
     def run(self):
         self.finished = False
         async def player_activity_task():
-            print(datetime.datetime.now().ctime(), "PLAYER ACTIVITY TRACK START")
+            logger.info("PLAYER ACTIVITY TRACK START")
             start = time.time()
             online_all = await Async.get("https://api.wynncraft.com/v3/player")
             online_all = {x for x in online_all["players"]}
@@ -40,7 +41,7 @@ LEFT JOIN uuid_name ON uuid_name.uuid=player_stats.uuid;''')
                 Connection.execute(f"INSERT INTO activity_members VALUES {','.join(inserts[i:i+128])}")
 
             end = time.time()
-            print(datetime.datetime.now().ctime(), "PLAYER ACTIVITY TASK", end-start, "s")
+            logger.info("PLAYER ACTIVITY TASK"+f" {end-start}s")
             
             await asyncio.sleep(self.sleep)
 

@@ -1,6 +1,7 @@
 import asyncio
 import traceback
 import datetime
+from log import logger
 
 class Task:
     def __init__(self, sleep):
@@ -30,7 +31,7 @@ class Task:
                     await coro()
                 except Exception as e:
                     traceback.print_exception(type(e), e, e.__traceback__)
-                    print(datetime.datetime.now().ctime(), "Restarting (Error Occured?)")
+                    logger.info("Restarting (Error Occured?)")
                 await asyncio.sleep(10)
         except Exception as e:
             print(e)
