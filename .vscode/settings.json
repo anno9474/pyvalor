@@ -1,8 +1,0 @@
-{
-    "python.autoComplete.extraPaths": [
-        "../heartbeat/"
-    ],
-    "python.analysis.extraPaths": [
-        "../heartbeat/"
-    ],
-}

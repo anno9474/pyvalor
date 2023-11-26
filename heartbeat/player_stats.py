@@ -54,15 +54,9 @@ class PlayerStatsTask(Task):
 
                 online_all = await Async.get("https://api.wynncraft.com/v3/player")
                 online_all = {name for name in online_all.get("players", [])}
-                # online_all = await Async.get("https://api.wynncraft.com/public_api.php?action=onlinePlayers")
-                # online_all = {y for x in online_all for y in online_all[x] if not "request" in x}
                 queued_players = [x[0] for x in Connection.execute("SELECT uuid FROM player_stats_queue")]
                 Connection.execute("DELETE FROM player_stats_queue") 
-                search_players = online_all | set(queued_players)
-
-                inserts = []
-                uuid_name = []
-                cnt = 0
+                search_players = list(online_all | set(queued_players))
 
                 old_membership = {}
                 res = Connection.execute("SELECT uuid, guild, guild_rank FROM `player_stats` WHERE guild IS NOT NULL and guild != 'None' and guild != ''")
@@ -79,136 +73,156 @@ class PlayerStatsTask(Task):
                 inserts_war_update = []
                 inserts_war_deltas = []
                 inserts_guild_log = []
+                inserts = []
+                uuid_name = []
+                cnt = 0
+                player_idx = 0
 
-                for player in search_players:
-                    uri = f"https://api.wynncraft.com/v3/player/{player}?fullResult=True&apikey="+api_key
+                while player_idx < len(search_players):
                     try:
-                        stats = await Async.get(uri)
-                    except:
-                        print(player, "fallback to mojang")
-                        try: 
+                        player = search_players[player_idx] # it could be uuid or name
+                        print(player)
+                        uri = f"https://api.wynncraft.com/v3/player/{player}?fullResult=True&apikey="+api_key
+                        try:
+                            stats = await Async.get(uri)
+                        except:
                             uuid = await PlayerStatsTask.get_uuid(player)
                             uri = f"https://api.wynncraft.com/v3/player/{uuid}?fullResult=True&apikey="+api_key
                             stats = await Async.get(uri)
-                        except:
-                            print(uri, "uuid borked")
+
+                        row = [0]*len(idx)
+                        if not stats or not "uuid" in stats:
+                            player_idx += 1
                             continue
-                    row = [0]*len(idx)
-                    if not stats or not "uuid" in stats:
-                        print(player, "no uuid, skip")
-                        continue
 
-                    uuid = stats["uuid"]
-                    row[idx["uuid"]] = uuid
+                        uuid = stats["uuid"]
+                        row[idx["uuid"]] = uuid
+                        player = stats["username"] # make sure player becomes username
 
-                    guild = None
-                    guild_rank = None
-                    if stats["guild"]:
-                        guild = stats["guild"]["name"]
-                        guild_rank = stats["guild"]["rank"]
-                    
-                    old_guild, old_rank = old_membership.get(uuid, [None, None])
-                    if guild != old_guild:
-                        inserts_guild_log.append(f"('{uuid}', '{old_guild}', '{old_rank}', '{guild}', {time.time()})")
-
-                    row[idx["guild"]] = f'"{guild}"'
-                    row[idx["guild_rank"]] = f'"{guild_rank}"'
-
-                    if not "lastJoin" in stats: continue
-                    row[idx["lastjoin"]] = datetime.datetime.fromisoformat(stats["lastJoin"]).timestamp()
-
-                    if not "firstJoin" in stats: continue
-                    row[idx["firstjoin"]] = datetime.datetime.fromisoformat(stats["firstJoin"]).timestamp()
-
-                    if not "characters" in stats:
-                        continue
-
-                    character_data = stats["characters"]
-                    for cl_name in character_data:
-                        cl = character_data[cl_name]
-                        cl_type = cl["type"]
-
-                        warcount = cl["wars"]
-                        if uuid in prev_warcounts and cl_name in prev_warcounts[uuid]:
-                            old_warcount = prev_warcounts[uuid][cl_name]
-                            # if war count hasn't changed don't update a thing
-                            if warcount != old_warcount:
-                                inserts_war_deltas.append((uuid, cl_name, warcount-old_warcount, cl_type))
-                                inserts_war_update.append((uuid, cl_name, warcount, cl_type))
-                        else:
-                            inserts_war_update.append((uuid, cl_name, warcount, cl_type))
-
-                        if cl["dungeons"]:
-                            for dung, dung_count in cl["dungeons"]["list"].items():
-                                if dung in idx:
-                                    row[idx[dung]] += dung_count
-
-                        if cl["raids"]:
-                            for raid, raid_count in cl["raids"]["list"].items():
-                                if raid in idx:
-                                    row[idx[raid]] += raid_count
-
-                        row[idx["itemsIdentified"]] += PlayerStatsTask.null_or_value(cl.get("itemsIdentified", 0))
-                        row[idx["mobsKilled"]] += PlayerStatsTask.null_or_value(cl.get("mobsKilled", 0))
-                        row[idx["chestsFound"]] += PlayerStatsTask.null_or_value(cl.get("chestsFound", 0))
-                        row[idx["blocksWalked"]] += PlayerStatsTask.null_or_value(cl.get("blocksWalked", 0))
-                        row[idx["logins"]] += PlayerStatsTask.null_or_value(cl.get("logins", 0))
-                        row[idx["deaths"]] += PlayerStatsTask.null_or_value(cl.get("deaths", 0))
-                        row[idx["playtime"]] += PlayerStatsTask.null_or_value(cl.get("playtime", 0))
-                        # row[idx["combat"]] += cl["level"] todo combat lvl is gone
+                        guild = None
+                        guild_rank = None
+                        if stats["guild"]:
+                            guild = stats["guild"]["name"]
+                            guild_rank = stats["guild"]["rank"]
                         
-                        if not cl.get("professions"): continue
+                        old_guild, old_rank = old_membership.get(uuid, [None, None])
+                        if guild != old_guild:
+                            inserts_guild_log.append(f"('{uuid}', '{old_guild}', '{old_rank}', '{guild}', {time.time()})")
 
-                        for prof in cl.get("professions"):
-                            if not prof in cl or not "xpPercent" in cl["professions"][prof]: continue
-                            xp = cl["professions"][prof]["xpPercent"]
-                            row[idx[prof]] += cl["professions"][prof]["level"] + (xp if xp else 0)/100
-                    
-                    inserts.append(row)
-                    uuid_name.append((uuid, player))
-                    cnt += 1
+                        row[idx["guild"]] = f'"{guild}"'
+                        row[idx["guild_rank"]] = f'"{guild_rank}"'
 
-                    if (cnt % 50 == 0 or cnt == len(online_all)-1):
-                        if inserts:
-                            curr_time = time.time()
-                            query_stats = "REPLACE INTO player_stats VALUES " + ','.join(f"('{x[0]}', {str(x[1])}, {','.join(map(str, x[2:]))})" for x in inserts)
-                            query_uuid = "REPLACE INTO uuid_name VALUES " + ','.join(f"(\'{uuid}\',\'{name}\')" for uuid, name in uuid_name)
-                            query_wars_update  = "REPLACE INTO cumu_warcounts VALUES " + ','.join(f"(\'{uuid}\',\'{character_id}\', {curr_time}, {warcount}, \'{cl_type}\')" 
-                                                                                                    for uuid, character_id, warcount, cl_type in inserts_war_update)
-                            query_wars_delta  = "INSERT INTO delta_warcounts VALUES " + ','.join(f"(\'{uuid}\',\'{character_id}\', {curr_time}, {wardiff}, \'{cl_type}\')" 
-                                                                        for uuid, character_id, wardiff, cl_type in inserts_war_deltas)
-                            if inserts_war_update:
-                                Connection.execute(query_wars_update)
-                                inserts_war_update = []
-                            if inserts_war_deltas:
-                                Connection.execute(query_wars_delta)
-                                inserts_war_deltas = []
+                        if not "lastJoin" in stats: 
+                            player_idx += 1
+                            continue
 
-                            name_paren = ['\''+uuid+'\'' for uuid, _ in uuid_name]
-                            old_names = Connection.execute(
-                                f"SELECT uuid, name FROM uuid_name WHERE uuid IN ({','.join(name_paren)})")
-                            old_names_dict = {uuid: old for uuid, old in old_names} # believe me, this way is still faster than tmp table join
-                            uuid_name_history_update = []
-                            for uuid, name in uuid_name:
-                                if uuid in old_names_dict and old_names_dict[uuid] != name:
-                                    uuid_name_history_update.append((uuid, old_names_dict[uuid], name, curr_time))
-                            if uuid_name_history_update:
-                                query_uuid_name_history = "INSERT INTO uuid_name_history VALUES " + \
-                                    ','.join(f"('{uuid}','{old}','{new}',{curr_time})" for uuid, old, new, curr_time in uuid_name_history_update)
-                                Connection.execute(query_uuid_name_history)
+                        row[idx["lastjoin"]] = datetime.datetime.fromisoformat(stats["lastJoin"]).timestamp()
 
-                            Connection.execute(query_stats)
-                            Connection.execute(query_uuid)
+                        if not "firstJoin" in stats: 
+                            player_idx += 1
+                            continue
+
+                        row[idx["firstjoin"]] = datetime.datetime.fromisoformat(stats["firstJoin"]).timestamp()
+
+                        if not "characters" in stats:
+                            player_idx += 1
+                            continue
+
+                        character_data = stats["characters"]
+                        for cl_name in character_data:
+                            cl = character_data[cl_name]
+                            cl_type = cl["type"]
+
+                            warcount = cl["wars"]
+                            if uuid in prev_warcounts and cl_name in prev_warcounts[uuid]:
+                                old_warcount = prev_warcounts[uuid][cl_name]
+                                # if war count hasn't changed don't update a thing
+                                if warcount != old_warcount:
+                                    inserts_war_deltas.append((uuid, cl_name, warcount-old_warcount, cl_type))
+                                    inserts_war_update.append((uuid, cl_name, warcount, cl_type))
+                            else:
+                                inserts_war_update.append((uuid, cl_name, warcount, cl_type))
+
+                            if cl["dungeons"]:
+                                for dung, dung_count in cl["dungeons"]["list"].items():
+                                    if dung in idx:
+                                        row[idx[dung]] += dung_count
+
+                            if cl["raids"]:
+                                for raid, raid_count in cl["raids"]["list"].items():
+                                    if raid in idx:
+                                        row[idx[raid]] += raid_count
+
+                            row[idx["itemsIdentified"]] += PlayerStatsTask.null_or_value(cl.get("itemsIdentified", 0))
+                            row[idx["mobsKilled"]] += PlayerStatsTask.null_or_value(cl.get("mobsKilled", 0))
+                            row[idx["chestsFound"]] += PlayerStatsTask.null_or_value(cl.get("chestsFound", 0))
+                            row[idx["blocksWalked"]] += PlayerStatsTask.null_or_value(cl.get("blocksWalked", 0))
+                            row[idx["logins"]] += PlayerStatsTask.null_or_value(cl.get("logins", 0))
+                            row[idx["deaths"]] += PlayerStatsTask.null_or_value(cl.get("deaths", 0))
+                            row[idx["playtime"]] += PlayerStatsTask.null_or_value(cl.get("playtime", 0))
+                            # row[idx["combat"]] += cl["level"] todo combat lvl is gone
                             
-                        if inserts_guild_log:
-                            query_guild_log = "INSERT INTO guild_join_log VALUES " + ','.join(inserts_guild_log)
-                            Connection.execute(query_guild_log)
-                            
-                        inserts_guild_log = []
-                        inserts = []
-                        uuid_name = []
+                            if not cl.get("professions"): 
+                                player_idx += 1
+                                continue
 
-                    await asyncio.sleep(0.3)
+                            for prof in cl.get("professions"):
+                                if not prof in cl or not "xpPercent" in cl["professions"][prof]: continue
+                                xp = cl["professions"][prof]["xpPercent"]
+                                row[idx[prof]] += cl["professions"][prof]["level"] + (xp if xp else 0)/100
+                        
+                        inserts.append(row)
+                        uuid_name.append((uuid, player))
+                        cnt += 1
+
+                        if (cnt % 50 == 0 or player_idx == len(online_all)-1):
+                            if inserts:
+                                curr_time = time.time()
+                                query_stats = "REPLACE INTO player_stats VALUES " + ','.join(f"('{x[0]}', {str(x[1])}, {','.join(map(str, x[2:]))})" for x in inserts)
+                                query_uuid = "REPLACE INTO uuid_name VALUES " + ','.join(f"(\'{uuid}\',\'{name}\')" for uuid, name in uuid_name)
+                                query_wars_update  = "REPLACE INTO cumu_warcounts VALUES " + ','.join(f"(\'{uuid}\',\'{character_id}\', {curr_time}, {warcount}, \'{cl_type}\')" 
+                                                                                                        for uuid, character_id, warcount, cl_type in inserts_war_update)
+                                query_wars_delta  = "INSERT INTO delta_warcounts VALUES " + ','.join(f"(\'{uuid}\',\'{character_id}\', {curr_time}, {wardiff}, \'{cl_type}\')" 
+                                                                            for uuid, character_id, wardiff, cl_type in inserts_war_deltas)
+                                if inserts_war_update:
+                                    Connection.execute(query_wars_update)
+                                    inserts_war_update = []
+                                if inserts_war_deltas:
+                                    Connection.execute(query_wars_delta)
+                                    inserts_war_deltas = []
+
+                                name_paren = ['\''+uuid+'\'' for uuid, _ in uuid_name]
+                                old_names = Connection.execute(
+                                    f"SELECT uuid, name FROM uuid_name WHERE uuid IN ({','.join(name_paren)})")
+                                old_names_dict = {uuid: old for uuid, old in old_names} # believe me, this way is still faster than tmp table join
+                                uuid_name_history_update = []
+                                for uuid, name in uuid_name:
+                                    if uuid in old_names_dict and old_names_dict[uuid] != name:
+                                        uuid_name_history_update.append((uuid, old_names_dict[uuid], name, curr_time))
+                                if uuid_name_history_update:
+                                    query_uuid_name_history = "INSERT INTO uuid_name_history VALUES " + \
+                                        ','.join(f"('{uuid}','{old}','{new}',{curr_time})" for uuid, old, new, curr_time in uuid_name_history_update)
+                                    Connection.execute(query_uuid_name_history)
+
+                                Connection.execute(query_stats)
+                                Connection.execute(query_uuid)
+                                
+                            if inserts_guild_log:
+                                query_guild_log = "INSERT INTO guild_join_log VALUES " + ','.join(inserts_guild_log)
+                                Connection.execute(query_guild_log)
+                                
+                            inserts_guild_log = []
+                            inserts = []
+                            uuid_name = []
+
+                        player_idx += 1
+                        await asyncio.sleep(0.3)
+
+                    except Exception as e:
+                        print(datetime.datetime.now().ctime(), f"PLAYER STATS TASK ERROR")
+                        print(e.with_traceback())
+                        player_idx += 1
+                        print(f"PLAYER IS {search_players[player_idx]}")
 
                 end = time.time()
                 print(datetime.datetime.now().ctime(), "PLAYER STATS TASK", end-start, "s")
