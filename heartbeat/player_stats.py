@@ -30,11 +30,16 @@ class PlayerStatsTask(Task):
         if "-" in player: return False
         exist = Connection.execute(f"SELECT * FROM uuid_name WHERE name='{player}' LIMIT 1")
         if not exist:
-            uuid = (await Async.get(f"https://api.mojang.com/users/profiles/minecraft/{player}"))["id"]
-            Connection.execute(f"INSERT INTO uuid_name VALUES ('{uuid}', '{player}')")
+            mojang_data = await Async.get(f"https://api.mojang.com/users/profiles/minecraft/{player}")
+            if not "id" in mojang_data:
+                return False
+            
+            uuid = mojang_data["id"]
+            uuid36 = uuid[:8]+'-'+uuid[8:12]+'-'+uuid[12:16]+'-'+uuid[16:20]+'-'+uuid[20:]
+            Connection.execute(f"INSERT INTO uuid_name VALUES ('{uuid36}', '{player}')")
         else:
             return exist[0][0]
-        return uuid[:8]+'-'+uuid[8:12]+'-'+uuid[12:16]+'-'+uuid[16:20]+'-'+uuid[20:]
+        return uuid36
         
     def run(self):
         self.finished = False
@@ -57,7 +62,7 @@ class PlayerStatsTask(Task):
                 online_all = {name for name in online_all.get("players", [])}
                 queued_players = [x[0] for x in Connection.execute("SELECT uuid FROM player_stats_queue")]
                 Connection.execute("DELETE FROM player_stats_queue") 
-                search_players = list(online_all | set(queued_players))
+                search_players = list(online_all | set(queued_players))[::-1]
 
                 old_membership = {}
                 res = Connection.execute("SELECT uuid, guild, guild_rank FROM `player_stats` WHERE guild IS NOT NULL and guild != 'None' and guild != ''")
@@ -82,14 +87,19 @@ class PlayerStatsTask(Task):
                 while player_idx < len(search_players):
                     try:
                         player = search_players[player_idx] # it could be uuid or name
-                        print(player)
-                        uri = f"https://api.wynncraft.com/v3/player/{player}?fullResult=True&apikey="+api_key
+                        uri = f"https://api.wynncraft.com/v3/player/{player}?fullResult=True"
                         try:
                             stats = await Async.get(uri)
                         except:
                             uuid = await PlayerStatsTask.get_uuid(player)
-                            uri = f"https://api.wynncraft.com/v3/player/{uuid}?fullResult=True&apikey="+api_key
-                            stats = await Async.get(uri)
+                            
+                            try:
+                                uri = f"https://api.wynncraft.com/v3/player/{uuid}?fullResult=True"
+                                stats = await Async.get(uri)
+                            except:
+                                logger.warn(f"PLAYER STATS uuid and name don't work: {player}")
+                                player_idx += 1
+                                continue
 
                         row = [0]*len(idx)
                         if not stats or not "uuid" in stats:
@@ -134,7 +144,7 @@ class PlayerStatsTask(Task):
                             cl = character_data[cl_name]
                             cl_type = cl["type"]
 
-                            warcount = cl["wars"]
+                            warcount = PlayerStatsTask.null_or_value(cl.get("wars", 0))
                             if uuid in prev_warcounts and cl_name in prev_warcounts[uuid]:
                                 old_warcount = prev_warcounts[uuid][cl_name]
                                 # if war count hasn't changed don't update a thing
@@ -176,7 +186,7 @@ class PlayerStatsTask(Task):
                         uuid_name.append((uuid, player))
                         cnt += 1
 
-                        if (cnt % 50 == 0 or player_idx == len(online_all)-1):
+                        if (cnt % 10 == 0 or player_idx == len(online_all)-1):
                             if inserts:
                                 curr_time = time.time()
                                 query_stats = "REPLACE INTO player_stats VALUES " + ','.join(f"('{x[0]}', {str(x[1])}, {','.join(map(str, x[2:]))})" for x in inserts)
@@ -216,14 +226,14 @@ class PlayerStatsTask(Task):
                             inserts = []
                             uuid_name = []
 
-                        player_idx += 1
                         await asyncio.sleep(0.3)
 
                     except Exception as e:
                         logger.info(f"PLAYER STATS TASK ERROR")
                         logger.exception(e)
-                        player_idx += 1
                         print(f"PLAYER IS {search_players[player_idx]}")
+                    
+                    player_idx += 1
 
                 end = time.time()
                 logger.info("PLAYER STATS TASK"+f" {end-start}s")
