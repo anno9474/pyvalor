@@ -35,6 +35,7 @@ LEFT JOIN uuid_name ON uuid_name.uuid=player_stats.uuid;''')
 
             for player_name in intersection:
                 guild, uuid = player_to_guild[player_name]
+                if not guild or not uuid: continue
                 inserts.append(f"(\"{player_name}\", \"{guild}\", {int(time.time())}, \"{uuid}\")")
 
             for i in range(0, 128, len(inserts)):
