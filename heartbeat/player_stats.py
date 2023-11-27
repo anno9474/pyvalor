@@ -61,8 +61,8 @@ class PlayerStatsTask(Task):
                 online_all = await Async.get("https://api.wynncraft.com/v3/player")
                 online_all = {name for name in online_all.get("players", [])}
                 queued_players = [x[0] for x in Connection.execute("SELECT uuid FROM player_stats_queue")]
-                Connection.execute("DELETE FROM player_stats_queue") 
                 search_players = list(online_all | set(queued_players))[::-1]
+                search_players = ["Krokofant"]
 
                 old_membership = {}
                 res = Connection.execute("SELECT uuid, guild, guild_rank FROM `player_stats` WHERE guild IS NOT NULL and guild != 'None' and guild != ''")
@@ -237,6 +237,7 @@ class PlayerStatsTask(Task):
 
                 end = time.time()
                 logger.info("PLAYER STATS TASK"+f" {end-start}s")
+                Connection.execute("DELETE FROM player_stats_queue") 
                 
                 await asyncio.sleep(self.sleep)
         
