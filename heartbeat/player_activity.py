@@ -35,11 +35,17 @@ LEFT JOIN uuid_name ON uuid_name.uuid=player_stats.uuid;''')
 
             for player_name in intersection:
                 guild, uuid = player_to_guild[player_name]
-                if not guild or not uuid: continue
+                if not player_name or not guild or not uuid: continue
                 inserts.append(f"(\"{player_name}\", \"{guild}\", {int(time.time())}, \"{uuid}\")")
 
-            for i in range(0, 128, len(inserts)):
-                Connection.execute(f"INSERT INTO activity_members VALUES {','.join(inserts[i:i+128])}")
+            for i in range(0, 32, len(inserts)):
+                try:
+                    Connection.execute(f"INSERT INTO activity_members VALUES {','.join(inserts[i:i+32])}")
+                except Exception as e:
+                    logger.info(f"PLAYER ACTIVITY TASK ERROR")
+                    logger.exception(e)
+                    logger.warn(f"insertion looks like: {','.join(inserts[i:i+32])}")
+                    self.finished = True
 
             end = time.time()
             logger.info("PLAYER ACTIVITY TASK"+f" {end-start}s")
