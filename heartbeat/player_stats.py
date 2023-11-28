@@ -85,7 +85,6 @@ class PlayerStatsTask(Task):
                 player_idx = 0
 
                 while player_idx < len(search_players):
-                    print(search_players[player_idx], player_idx, len(search_players))
                     try:
                         player = search_players[player_idx] # it could be uuid or name
                         uri = f"https://api.wynncraft.com/v3/player/{player}?fullResult=True"
