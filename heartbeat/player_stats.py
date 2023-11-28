@@ -47,9 +47,9 @@ class PlayerStatsTask(Task):
                'Sand-Swept Tomb': 6, 'Ice Barrows': 7, 'Undergrowth Ruins': 8, "Galleon's Graveyard": 9, 'Fallen Factory': 10, 
                'Eldritch Outlook': 11,'Corrupted Decrepit Sewers': 12, 'Corrupted Infested Pit': 13, 'Corrupted Lost Sanctuary': 14, 
                'Corrupted Underworld Crypt': 15, 'Corrupted Sand-Swept Tomb': 16, 'Corrupted Ice Barrows': 17, 'Corrupted Undergrowth Ruins': 18, 
-               'itemsIdentified': 19, 'chestsFound': 20, 'blocksWalked': 21, 'logins': 22, 'playtime': 23, 'Alchemism': 24, 'Armouring': 25, 
-               'combat': 26, 'Cooking': 27, 'Farming': 28, 'Fishing': 29, 'Jeweling': 30, 'Mining': 31, 'Scribing': 32, 'Tailoring': 33, 
-               'Weaponsmithing': 34, 'Woodcutting': 35, 'Woodworking': 36, 'Nest of the Grootslangs': 37, 'The Canyon Colossus': 38, 
+               'itemsIdentified': 19, 'chestsFound': 20, 'blocksWalked': 21, 'logins': 22, 'playtime': 23, 'alchemism': 24, 'armouring': 25, 
+               'combat': 26, 'cooking': 27, 'farming': 28, 'fishing': 29, 'jeweling': 30, 'mining': 31, 'scribing': 32, 'tailoring': 33, 
+               'weaponsmithing': 34, 'woodcutting': 35, 'woodworking': 36, 'Nest of the Grootslangs': 37, 'The Canyon Colossus': 38, 
                "mobsKilled": 39, "deaths": 40, "guild": 41, "Orphion's Nexus of Light": 42, "guild_rank": 43, "The Nameless Anomaly": 44, 
                "Corrupted Galleon's Graveyard": 45, "Timelost Sanctum": 46, "lastjoin": 47}
         
@@ -62,7 +62,7 @@ class PlayerStatsTask(Task):
                 online_all = {name for name in online_all.get("players", [])}
                 queued_players = [x[0] for x in Connection.execute("SELECT uuid FROM player_stats_queue")]
                 search_players = list(online_all | set(queued_players))[::-1]
-                search_players = ["Krokofant"]
+                # search_players = [x[0] for x in Connection.execute("SELECT * FROM `player_stats` ORDER BY playtime DESC LIMIT 10000;")][5000:]
 
                 old_membership = {}
                 res = Connection.execute("SELECT uuid, guild, guild_rank FROM `player_stats` WHERE guild IS NOT NULL and guild != 'None' and guild != ''")
@@ -85,6 +85,7 @@ class PlayerStatsTask(Task):
                 player_idx = 0
 
                 while player_idx < len(search_players):
+                    print(search_players[player_idx], player_idx, len(search_players))
                     try:
                         player = search_players[player_idx] # it could be uuid or name
                         uri = f"https://api.wynncraft.com/v3/player/{player}?fullResult=True"
@@ -178,7 +179,11 @@ class PlayerStatsTask(Task):
                                 continue
 
                             for prof in cl.get("professions"):
-                                if not prof in cl or not "xpPercent" in cl["professions"][prof]: continue
+                                if not "xpPercent" in cl["professions"][prof]: continue
+                                if not prof in idx: 
+                                    logger.warn(f"PLAYER STATS cannot find prof {prof} player {player}")
+                                    continue
+
                                 xp = cl["professions"][prof]["xpPercent"]
                                 row[idx[prof]] += cl["professions"][prof]["level"] + (xp if xp else 0)/100
                         
@@ -186,7 +191,7 @@ class PlayerStatsTask(Task):
                         uuid_name.append((uuid, player))
                         cnt += 1
 
-                        if (cnt % 10 == 0 or player_idx == len(online_all)-1):
+                        if (cnt % 10 == 0 or player_idx == len(search_players)-1):
                             if inserts:
                                 curr_time = time.time()
                                 query_stats = "REPLACE INTO player_stats VALUES " + ','.join(f"('{x[0]}', {str(x[1])}, {','.join(map(str, x[2:]))})" for x in inserts)
