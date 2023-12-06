@@ -127,13 +127,13 @@ class PlayerStatsTask(Task):
                             player_idx += 1
                             continue
 
-                        row[idx["lastjoin"]] = datetime.datetime.fromisoformat(stats["lastJoin"]).timestamp()
+                        row[idx["lastjoin"]] = datetime.datetime.fromisoformat(stats["lastJoin"][:-1]).timestamp()
 
                         if not "firstJoin" in stats: 
                             player_idx += 1
                             continue
 
-                        row[idx["firstjoin"]] = datetime.datetime.fromisoformat(stats["firstJoin"]).timestamp()
+                        row[idx["firstjoin"]] = datetime.datetime.fromisoformat(stats["firstJoin"][:-1]).timestamp()
 
                         if not "characters" in stats:
                             player_idx += 1
