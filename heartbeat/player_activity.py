@@ -43,7 +43,8 @@ LEFT JOIN uuid_name ON uuid_name.uuid=player_stats.uuid;''')
 
             for i in range(0, 32, len(inserts)):
                 try:
-                    print(f"INSERT INTO activity_members VALUES {','.join(inserts[i:i+32])}")
+                    continue
+                    # print(f"INSERT INTO activity_members VALUES {','.join(inserts[i:i+32])}")
                 except Exception as e:
                     logger.info(f"PLAYER ACTIVITY TASK ERROR")
                     logger.exception(e)

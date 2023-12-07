@@ -57,6 +57,7 @@ class GuildActivityTask(Task):
                 guild_member_cnt = {g: 0 for g in guilds}
                 
                 for m in cached.keys() & online_all:
+                    if not cached[m] in guild_member_cnt: continue
                     guild_member_cnt[cached[m]] += 1
 
                 now = int(time.time())
