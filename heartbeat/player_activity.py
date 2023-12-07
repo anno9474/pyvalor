@@ -26,11 +26,32 @@ class PlayerActivityTask(Task):
 
             inserts = []
 
-            res = Connection.execute('''SELECT uuid_name.name, player_stats.guild, player_stats.uuid FROM guild_list
-LEFT JOIN player_stats ON guild_list.guild=player_stats.guild
-LEFT JOIN uuid_name ON uuid_name.uuid=player_stats.uuid;''')
+            res = Connection.execute('SELECT * FROM guild_list')
+            player_to_guild = {}
+            player_to_guild_tuples = []
+
+            for guild, in res:
+                guild_data = await Async.get("https://api.wynncraft.com/v3/guild/" + guild)
+                guild_members = []
+                for rank in guild_data["members"]:
+                    if isinstance(guild_data["members"][rank], int): continue
+                    guild_members.extend((x, guild_data["members"][rank][x]["uuid"]) for x in guild_data["members"][rank])
+                
+                for member, uuid in guild_members:
+                    player_to_guild[member] = guild, uuid
+                    player_to_guild_tuples.append((guild, member))
             
-            player_to_guild = {name: (guild, uuid) for name, guild, uuid in res}
+            Connection.execute(f"DELETE FROM guild_member_cache")
+
+            for i in range(0, len(player_to_guild_tuples), 256):
+                try:
+                    pairs_flat = [y for x in player_to_guild_tuples[i:i+256] for y in x]
+                    Connection.execute(f"INSERT INTO guild_member_cache VALUES " + ("(%s, %s),"*(len(pairs_flat)//2))[:-1], prepared=True, prep_values=pairs_flat)
+                except Exception as e:
+                    logger.info(f"PLAYER ACTIVITY TASK ERROR")
+                    logger.exception(e)
+                    self.finished = True
+
             intersection = online_all & player_to_guild.keys()
 
             for player_name in intersection:
@@ -41,10 +62,9 @@ LEFT JOIN uuid_name ON uuid_name.uuid=player_stats.uuid;''')
 
                 inserts.append(f"(\"{player_name}\", \"{guild}\", {int(time.time())}, \"{uuid}\")")
 
-            for i in range(0, 32, len(inserts)):
+            for i in range(0, len(inserts), 32):
                 try:
-                    continue
-                    # print(f"INSERT INTO activity_members VALUES {','.join(inserts[i:i+32])}")
+                    Connection.execute(f"INSERT INTO activity_members VALUES {','.join(inserts[i:i+32])}")
                 except Exception as e:
                     logger.info(f"PLAYER ACTIVITY TASK ERROR")
                     logger.exception(e)
