@@ -14,7 +14,7 @@ async def terr_connect(websocket, path):
 
 start = websockets.serve(terr_connect, "0.0.0.0", 8080)
 ev.run_until_complete(start)
-ev.run_until_complete(player_stats_updater_service.serve())
+ev.create_task(player_stats_updater_service.serve())
 
 Heartbeat.run_tasks()
 
