@@ -148,11 +148,16 @@ class PlayerStatsTask(Task):
         
         inserts.append(row)
         uuid_name.append((uuid, player))
+        return True
 
     @staticmethod
-    async def get_stats_track_references():
-        online_all = await Async.get("https://api.wynncraft.com/v3/player")
+    async def get_stats_track_references(needs_player_list=True):
+        if needs_player_list:
+            online_all = await Async.get("https://api.wynncraft.com/v3/player")
+        else: 
+            online_all = {}
         online_all = {name for name in online_all.get("players", [])}
+
         queued_players = [x[0] for x in Connection.execute("SELECT uuid FROM player_stats_queue")]
         search_players = list(online_all | set(queued_players))[::-1]
         # search_players = [x[0] for x in Connection.execute("SELECT * FROM `player_stats` ORDER BY playtime DESC LIMIT 10000;")][5000:]
