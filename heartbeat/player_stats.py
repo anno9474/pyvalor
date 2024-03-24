@@ -293,7 +293,6 @@ class PlayerStatsTask(Task):
                 while player_idx < len(search_players):
                     try:
                         player = search_players[player_idx] # it could be uuid or name
-                        print(player)
                         if not await PlayerStatsTask.track_player(player, old_membership, prev_warcounts, old_global_data, inserts_war_update, inserts_war_deltas, inserts_guild_log, inserts, uuid_name, update_player_global_stats, deltas_player_global_stats):
                             player_idx += 1
                         cnt += 1
