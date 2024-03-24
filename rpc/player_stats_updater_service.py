@@ -12,16 +12,16 @@ class PlayerStatsUpdater(player_stats_update_pb2_grpc.PlayerStatsUpdater):
         request: player_stats_update_pb2.Request,
         context: grpc.aio.ServicerContext,
     ) -> player_stats_update_pb2.Response:
-        search_players, old_membership, prev_warcounts = await PlayerStatsTask.get_stats_track_references(needs_player_list=False)
-        inserts_war_update, inserts_war_deltas, inserts_guild_log, inserts, uuid_name = PlayerStatsTask.get_empty_stats_track_buffers()
+        search_players, old_membership, prev_warcounts, old_global_stats = await PlayerStatsTask.get_stats_track_references(needs_player_list=False)
+        inserts_war_update, inserts_war_deltas, inserts_guild_log, inserts, uuid_name, update_player_global_stats, deltas_player_global_stats = PlayerStatsTask.get_empty_stats_track_buffers()
         failures = []
         for player_uuid in request.player_uuid:
-            res = await PlayerStatsTask.track_player(player_uuid, old_membership, prev_warcounts, 
-                                                    inserts_war_update, inserts_war_deltas, inserts_guild_log, inserts, uuid_name)
+            res = await PlayerStatsTask.track_player(player_uuid, old_membership, prev_warcounts, old_global_stats,
+                                                    inserts_war_update, inserts_war_deltas, inserts_guild_log, inserts, uuid_name, update_player_global_stats, deltas_player_global_stats)
             if not res:
                 failures.append(player_uuid)
 
-        PlayerStatsTask.write_results_to_db(inserts_war_update, inserts_war_deltas, inserts_guild_log, inserts, uuid_name)
+        PlayerStatsTask.write_results_to_db(inserts_war_update, inserts_war_deltas, inserts_guild_log, inserts, uuid_name, update_player_global_stats, deltas_player_global_stats )
         return player_stats_update_pb2.Response(failures=failures)
     
 

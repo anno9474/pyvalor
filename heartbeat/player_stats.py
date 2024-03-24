@@ -25,6 +25,8 @@ class PlayerStatsTask(Task):
                "mobsKilled": 39, "deaths": 40, "guild": 41, "Orphion's Nexus of Light": 42, "guild_rank": 43, "The Nameless Anomaly": 44, 
                "Corrupted Galleon's Graveyard": 45, "Timelost Sanctum": 46, "lastjoin": 47}
     
+    global_stats_threshold = {"g_killedMobs": 2500, "g_chestsFound": 20, "g_totalLevel": 3}
+    
     def __init__(self, sleep):
         super().__init__(sleep)
         
@@ -50,9 +52,40 @@ class PlayerStatsTask(Task):
         else:
             return exist[0][0]
         return uuid36
-    
+
     @staticmethod
-    async def track_player(player, old_membership, prev_warcounts, inserts_war_update, inserts_war_deltas, inserts_guild_log, inserts, uuid_name) -> bool:
+    def append_player_global_stats_feature(feature_list, now, uuid, guild, kv_dict, old_global_stats, update_player_global_stats, deltas_player_global_stats):
+        old_player_global_stats = old_global_stats.get(uuid)
+        for feat in feature_list:
+            feat_name = f"g_{feat}"
+            new_val = kv_dict[feat]
+            delta_val = (new_val - old_player_global_stats[feat_name]) if old_player_global_stats and feat_name in old_player_global_stats else 0
+            if delta_val > 0:
+                if not feat_name in PlayerStatsTask.global_stats_threshold or delta_val >= PlayerStatsTask.global_stats_threshold[feat_name]:
+                    deltas_player_global_stats.append((uuid, guild, now, feat_name, delta_val))
+            update_player_global_stats.append((uuid, feat_name, new_val))
+
+    @staticmethod 
+    def append_player_global_stats(stats, old_global_data, update_player_global_stats, deltas_player_global_stats):
+        try:
+            global_data_features = ["wars", "totalLevel", "killedMobs", "chestsFound", "completedQuests"]
+            global_data_dungeons_features = [*stats["globalData"]["dungeons"]["list"].keys()]
+            global_data_raids_features = [*stats["globalData"]["raids"]["list"].keys()]
+            global_data_pvp_features = ["kills", "deaths"]
+            now = time.time()
+            
+            uuid = stats["uuid"]
+            guild = stats["guild"]["name"] if stats["guild"] else "None"
+            PlayerStatsTask.append_player_global_stats_feature(global_data_features, now, uuid, guild, stats["globalData"], old_global_data, update_player_global_stats, deltas_player_global_stats)
+            PlayerStatsTask.append_player_global_stats_feature(global_data_dungeons_features, now, uuid, guild, stats["globalData"]["dungeons"]["list"], old_global_data, update_player_global_stats, deltas_player_global_stats)
+            PlayerStatsTask.append_player_global_stats_feature(global_data_raids_features, now, uuid, guild, stats["globalData"]["raids"]["list"], old_global_data, update_player_global_stats, deltas_player_global_stats)
+            PlayerStatsTask.append_player_global_stats_feature(global_data_pvp_features, now, uuid, guild, stats["globalData"]["pvp"], old_global_data, update_player_global_stats, deltas_player_global_stats)
+        except Exception as e:
+            logger.exception(e)
+            logger.warn(f"PLAYER STATS could not append global data for {stats['uuid']}")
+        
+    @staticmethod
+    async def track_player(player, old_membership, prev_warcounts, old_global_data, inserts_war_update, inserts_war_deltas, inserts_guild_log, inserts, uuid_name, update_player_global_stats, deltas_player_global_stats) -> bool:
         uri = f"https://api.wynncraft.com/v3/player/{player}?fullResult=True"
         try:
             stats = await Async.get(uri)
@@ -73,6 +106,8 @@ class PlayerStatsTask(Task):
         uuid = stats["uuid"]
         row[PlayerStatsTask.idx["uuid"]] = uuid
         player = stats["username"] # make sure player becomes username
+
+        PlayerStatsTask.append_player_global_stats(stats, old_global_data, update_player_global_stats, deltas_player_global_stats)
 
         guild = None
         guild_rank = None
@@ -174,7 +209,15 @@ class PlayerStatsTask(Task):
                 prev_warcounts[uuid] = {}
             prev_warcounts[uuid][character_id] = warcount
         
-        return search_players, old_membership, prev_warcounts
+        res = Connection.execute("SELECT uuid, label, value FROM player_global_stats")
+        old_global_data = {}
+        for uuid, label, value in res:
+            if not uuid in old_global_data:
+                old_global_data[uuid] = {}
+            
+            old_global_data[uuid][label] = value
+
+        return search_players, old_membership, prev_warcounts, old_global_data
 
     @staticmethod
     def get_empty_stats_track_buffers():
@@ -183,11 +226,13 @@ class PlayerStatsTask(Task):
         inserts_guild_log = []
         inserts = []
         uuid_name = []
+        update_player_global_stats = []
+        deltas_player_global_stats = []
 
-        return inserts_war_update, inserts_war_deltas, inserts_guild_log, inserts, uuid_name
+        return inserts_war_update, inserts_war_deltas, inserts_guild_log, inserts, uuid_name, update_player_global_stats, deltas_player_global_stats
 
     @staticmethod
-    def write_results_to_db(inserts_war_update, inserts_war_deltas, inserts_guild_log, inserts, uuid_name):
+    def write_results_to_db(inserts_war_update, inserts_war_deltas, inserts_guild_log, inserts, uuid_name, update_player_global_stats, deltas_player_global_stats):
         if inserts:
             curr_time = time.time()
             query_stats = "REPLACE INTO player_stats VALUES " + ','.join(f"('{x[0]}', {str(x[1])}, {','.join(map(str, x[2:]))})" for x in inserts)
@@ -196,10 +241,19 @@ class PlayerStatsTask(Task):
                                                                                     for uuid, character_id, warcount, cl_type in inserts_war_update)
             query_wars_delta  = "INSERT INTO delta_warcounts VALUES " + ','.join(f"(\'{uuid}\',\'{character_id}\', {curr_time}, {wardiff}, \'{cl_type}\')" 
                                                         for uuid, character_id, wardiff, cl_type in inserts_war_deltas)
+            query_global_delta  = "INSERT INTO player_delta_record VALUES " + ','.join(f"(\'{uuid}\',\'{guild}\', {now}, " + '"'+feat_name+'"' + f", {delta_val})" 
+                                                        for uuid, guild, now, feat_name, delta_val in deltas_player_global_stats)
+            query_global_update  = "REPLACE INTO player_global_stats VALUES " + ',\n'.join(f"(\'{uuid}\'," + '"'+feat_name+'"'+f", {value})" 
+                                                        for uuid, feat_name, value in update_player_global_stats)
+        
             if inserts_war_update:
                 Connection.execute(query_wars_update)
             if inserts_war_deltas:
                 Connection.execute(query_wars_delta)
+            if update_player_global_stats:
+                Connection.execute(query_global_update)
+            if deltas_player_global_stats:
+                Connection.execute(query_global_delta)
 
             name_paren = ['\''+uuid+'\'' for uuid, _ in uuid_name]
             old_names = Connection.execute(
@@ -230,8 +284,8 @@ class PlayerStatsTask(Task):
                 start = time.time()
 
                 # generic "inserts" are actually REPLACE INTOs into player_stats table
-                inserts_war_update, inserts_war_deltas, inserts_guild_log, inserts, uuid_name = PlayerStatsTask.get_empty_stats_track_buffers()
-                search_players, old_membership, prev_warcounts = await PlayerStatsTask.get_stats_track_references()
+                inserts_war_update, inserts_war_deltas, inserts_guild_log, inserts, uuid_name, update_player_global_stats, deltas_player_global_stats = PlayerStatsTask.get_empty_stats_track_buffers()
+                search_players, old_membership, prev_warcounts, old_global_data = await PlayerStatsTask.get_stats_track_references()
 
                 cnt = 0
                 player_idx = 0
@@ -239,13 +293,14 @@ class PlayerStatsTask(Task):
                 while player_idx < len(search_players):
                     try:
                         player = search_players[player_idx] # it could be uuid or name
-                        if not await PlayerStatsTask.track_player(player, old_membership, prev_warcounts, inserts_war_update, inserts_war_deltas, inserts_guild_log, inserts, uuid_name):
+                        print(player)
+                        if not await PlayerStatsTask.track_player(player, old_membership, prev_warcounts, old_global_data, inserts_war_update, inserts_war_deltas, inserts_guild_log, inserts, uuid_name, update_player_global_stats, deltas_player_global_stats):
                             player_idx += 1
                         cnt += 1
 
                         if (cnt % 10 == 0 or player_idx == len(search_players)-1):
-                            PlayerStatsTask.write_results_to_db(inserts_war_update, inserts_war_deltas, inserts_guild_log, inserts, uuid_name)
-                            inserts_war_update, inserts_war_deltas, inserts_guild_log, inserts, uuid_name = PlayerStatsTask.get_empty_stats_track_buffers()
+                            PlayerStatsTask.write_results_to_db(inserts_war_update, inserts_war_deltas, inserts_guild_log, inserts, uuid_name, update_player_global_stats, deltas_player_global_stats)
+                            inserts_war_update, inserts_war_deltas, inserts_guild_log, inserts, uuid_name, update_player_global_stats, deltas_player_global_stats = PlayerStatsTask.get_empty_stats_track_buffers()
 
                         await asyncio.sleep(0.3)
 

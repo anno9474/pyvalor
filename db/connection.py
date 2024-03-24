@@ -19,7 +19,7 @@ class Connection:
     conn = mysql.connector.connect(**_info)
 
     @classmethod
-    def execute(cls, query: str, prepared=False, prep_values=[]):
+    def execute(cls, query: str, prepared=False, prep_values=[], fetchall=True):
         if time.time() - cls.last_connected > cls.connection_live:
             cls.conn.close()
             cls.conn = mysql.connector.connect(**cls._info)
@@ -33,13 +33,17 @@ class Connection:
             cursor.execute(query, prep_values)
         else:
             cursor.execute(query)
-        res = list(cursor.fetchall())
+        
+        res = None
+        if fetchall:
+            res = list(cursor.fetchall())
+
         cls.conn.commit()
         cursor.close()
         return res
     
     @classmethod 
-    def exec_all(cls, queries: List[str]):
+    def exec_all(cls, queries: List[str], fetchall=False):
         if time.time() - cls.last_connected > cls.connection_live:
             cls.conn.close()
             cls.conn = mysql.connector.connect(**cls._info)
@@ -51,6 +55,7 @@ class Connection:
         cursor = cls.conn.cursor()
         for q in queries:
             cursor.execute(q)
-            cursor.fetchall()
+            if fetchall:
+                cursor.fetchall()
         cls.conn.commit()
         cursor.close()
