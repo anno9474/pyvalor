@@ -34,6 +34,9 @@ class GXPTrackerTask(Task):
                 for guild in guild_names:
                     URL = f"https://api.wynncraft.com/v3/guild/{guild}"
                     g = await Async.get(URL)
+                    if not "members" in g:
+                        continue
+                    
                     members = []
                     insert_gxp_deltas = []
                     update_gxp_values = []
