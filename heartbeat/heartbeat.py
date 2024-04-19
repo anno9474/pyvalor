@@ -1,4 +1,3 @@
-
 from .task import Task
 from .terr_tracker import TerritoryTrackTask
 from .player_activity import PlayerActivityTask
