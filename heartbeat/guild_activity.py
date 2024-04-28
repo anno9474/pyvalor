@@ -13,8 +13,8 @@ load_dotenv()
 webhook = os.environ["JOINLEAVE"]
 
 class GuildActivityTask(Task):
-    def __init__(self, sleep, wsconns):
-        super().__init__(sleep)
+    def __init__(self, start_after, sleep, wsconns):
+        super().__init__(start_after, sleep)
         self.wsconns = wsconns
         
     def stop(self):
@@ -24,6 +24,8 @@ class GuildActivityTask(Task):
     def run(self):
         self.finished = False
         async def guild_activity_task():
+            await asyncio.sleep(self.start_after)
+
             while not self.finished:
                 logger.info("GUILD ACTIVITY TRACK START")
                 start = time.time()

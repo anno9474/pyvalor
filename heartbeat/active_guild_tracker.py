@@ -9,8 +9,8 @@ import sys
 from log import logger
 
 class ActiveGuildTrackerTask(Task):
-    def __init__(self, sleep):
-        super().__init__(sleep)
+    def __init__(self, start_after, sleep):
+        super().__init__(start_after, sleep)
         
     def stop(self):
         self.finished = True
@@ -19,6 +19,8 @@ class ActiveGuildTrackerTask(Task):
     def run(self):
         self.finished = False
         async def active_guild_tracker():
+            await asyncio.sleep(self.start_after)
+
             while not self.finished:
                 logger.info("ACTIVE GUILD TRACKER START")
                 start = time.time()

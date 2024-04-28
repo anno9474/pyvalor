@@ -9,7 +9,7 @@ import re
 
 class SeasonRatingTrackerTask(Task):
 
-    def __init__(self, sleep):
+    def __init__(self, start_after, sleep):
         super().__init__(sleep)
 
     def stop(self):
@@ -20,6 +20,8 @@ class SeasonRatingTrackerTask(Task):
         self.finished = False
 
         async def season_rating_tracker_task():
+            await asyncio.sleep(self.start_after)
+
             while not self.finished:
                 logger.info("SR START")
                 start = time.time()

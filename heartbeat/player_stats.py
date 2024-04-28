@@ -27,8 +27,8 @@ class PlayerStatsTask(Task):
     
     global_stats_threshold = {"g_killedMobs": 2500, "g_chestsFound": 20, "g_totalLevel": 3}
     
-    def __init__(self, sleep):
-        super().__init__(sleep)
+    def __init__(self, start_after, sleep):
+        super().__init__(start_after, sleep)
         
     def stop(self):
         self.finished = True
@@ -279,6 +279,8 @@ class PlayerStatsTask(Task):
         self.finished = False
         
         async def player_stats_task():
+            await asyncio.sleep(self.start_after)
+
             while not self.finished:
                 logger.info("PLAYER STATS TRACK START")
                 start = time.time()

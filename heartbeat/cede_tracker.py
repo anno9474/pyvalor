@@ -8,8 +8,8 @@ from log import logger
 import datetime
 
 class CedeTrackTask(Task):
-    def __init__(self, sleep):
-        super().__init__(sleep)
+    def __init__(self, start_after, sleep):
+        super().__init__(start_after, sleep)
         self.last_recorded = {}
 
         # data is collected in terr tracker heartbeat
@@ -22,6 +22,8 @@ class CedeTrackTask(Task):
     def run(self):
         self.finished = False
         async def terr_tracker_task():
+            await asyncio.sleep(self.start_after)
+
             while not self.finished:
                 logger.info("CEDE TRACKER START")
                 start = time.time()

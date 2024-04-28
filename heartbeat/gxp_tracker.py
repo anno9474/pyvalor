@@ -9,8 +9,8 @@ import sys
 from log import logger
 
 class GXPTrackerTask(Task):
-    def __init__(self, sleep):
-        super().__init__(sleep)
+    def __init__(self, start_after, sleep):
+        super().__init__(start_after, sleep)
         
     def stop(self):
         self.finished = True
@@ -19,6 +19,8 @@ class GXPTrackerTask(Task):
     def run(self):
         self.finished = False
         async def gxp_tracker_task():
+            await asyncio.sleep(self.start_after)
+
             while not self.finished:
                 logger.info("GXP START")
                 start = time.time()

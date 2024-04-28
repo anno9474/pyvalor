@@ -9,8 +9,8 @@ import sys
 from log import logger
 
 class GuildTagTask(Task):
-    def __init__(self, sleep):
-        super().__init__(sleep)
+    def __init__(self, start_after, sleep):
+        super().__init__(start_after, sleep)
         
     def stop(self):
         self.finished = True
@@ -19,6 +19,8 @@ class GuildTagTask(Task):
     def run(self):
         self.finished = False
         async def guild_tag_task():
+            await asyncio.sleep(self.start_after)
+            
             while not self.finished:
                 # this entire routine will take like 10MB/beat
                 logger.info("GUILD TAG NAME TASK START")

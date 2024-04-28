@@ -15,8 +15,8 @@ webhook_genwarlog = os.environ["GENWARLOG"]
 webhook_anowarlog = os.environ["ANOWARLOG"]
 
 class TerritoryTrackTask(Task):
-    def __init__(self, sleep, wsconns, cede_task):
-        super().__init__(sleep)
+    def __init__(self, start_after, sleep, wsconns, cede_task):
+        super().__init__(start_after, sleep)
         self.wsconns = wsconns
         self.cede_task = cede_task
         
@@ -27,6 +27,8 @@ class TerritoryTrackTask(Task):
     def run(self):
         self.finished = False
         async def terr_tracker_task():
+            await asyncio.sleep(self.start_after)
+
             while not self.finished:
                 logger.info("TERRITORY TRACK START")
                 start = time.time()

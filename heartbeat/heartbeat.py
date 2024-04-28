@@ -21,16 +21,16 @@ class Heartbeat:
     cede_tracker = CedeTrackTask(3600*2)
 
     tasks = [
-        TerritoryTrackTask(60, wsconns, cede_tracker),
-        PlayerActivityTask(3600),
-        GXPTrackerTask(1800),
-        GuildActivityTask(300, wsconns),
-        PlayerStatsTask(3600),
-        GuildTagTask(3600),
-        WCPlayersTask(60),
+        TerritoryTrackTask(2, 60, wsconns, cede_tracker),
+        PlayerActivityTask(3, 3600),
+        GXPTrackerTask(5, 1800),
+        GuildActivityTask(61, 300, wsconns),
+        PlayerStatsTask(101, 3600),
+        GuildTagTask(41, 3600),
+        # WCPlayersTask(60),
         cede_tracker,
-        ActiveGuildTrackerTask(3600),
-        SeasonRatingTrackerTask(21600)
+        ActiveGuildTrackerTask(29, 3600),
+        SeasonRatingTrackerTask(223, 21600)
     ]
     
     @staticmethod

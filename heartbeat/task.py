@@ -4,10 +4,11 @@ import datetime
 from log import logger
 
 class Task:
-    def __init__(self, sleep):
+    def __init__(self, start_after, sleep):
         self.finished = True
         self.continuous_task = None
         self.sleep = sleep
+        self.start_after = start_after
         
     def run(self):
         pass
