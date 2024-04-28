@@ -29,7 +29,7 @@ class Connection:
             cls.conn = mysql.connector.connect(**cls._info)
             cls.last_connected = time.time()
         cursor = cls.conn.cursor(prepared=prepared)
-        if prepared:
+        if prepared or prep_values:
             cursor.execute(query, prep_values)
         else:
             cursor.execute(query)
