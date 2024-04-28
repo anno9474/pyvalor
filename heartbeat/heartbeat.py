@@ -28,7 +28,7 @@ class Heartbeat:
         PlayerStatsTask(101, 3600),
         GuildTagTask(41, 3600),
         # WCPlayersTask(60),
-        cede_tracker,
+        # cede_tracker,
         ActiveGuildTrackerTask(29, 3600),
         SeasonRatingTrackerTask(223, 21600)
     ]
