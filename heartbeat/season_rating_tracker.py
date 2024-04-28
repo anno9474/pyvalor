@@ -63,7 +63,7 @@ class SeasonRatingTrackerTask(Task):
 
                     rating_delta = 0
                     if last_rating_result: # pymysql will return () which is falsey
-                        last_rating = last_rating_result[0]
+                        last_rating = last_rating_result[0][0]
                         rating_delta = current_season_rating - last_rating
 
                     # Insert or update the season rating and delta
