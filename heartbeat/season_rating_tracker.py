@@ -10,7 +10,7 @@ import re
 class SeasonRatingTrackerTask(Task):
 
     def __init__(self, start_after, sleep):
-        super().__init__(sleep)
+        super().__init__(start_after, sleep)
 
     def stop(self):
         self.finished = True
