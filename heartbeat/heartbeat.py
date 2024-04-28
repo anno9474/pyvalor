@@ -18,7 +18,7 @@ enabled = os.environ["ENABLED"].lower().split(',')
 
 class Heartbeat:
     wsconns = set()
-    cede_tracker = CedeTrackTask(3600*2)
+    cede_tracker = CedeTrackTask(0, 3600*2)
 
     tasks = [
         TerritoryTrackTask(2, 60, wsconns, cede_tracker),
