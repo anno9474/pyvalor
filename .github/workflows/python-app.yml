@@ -28,7 +28,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8 pytest grpcio-tools
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Genereate gRPC files
+    - name: Generate gRPC files
       run: |
         python -m grpc_tools.protoc --proto_path=protos --python_out=rpc --grpc_python_out=rpc --pyi_out=rpc protos/*.proto
     - name: Lint with flake8
