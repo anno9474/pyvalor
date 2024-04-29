@@ -5,9 +5,9 @@ name: Python application
 
 on:
   push:
-    branches: [ "testing" ]
+    branches: [ "pyvalor-testing" ]
   pull_request:
-    branches: [ "testing" ]
+    branches: [ "pyvalor-testing" ]
 
 permissions:
   contents: read
