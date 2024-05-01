@@ -12,6 +12,21 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: testpass
+          MYSQL_DATABASE: testdb
+          MYSQL_USER: testuser
+          MYSQL_PASSWORD: testpass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-retries 10
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python 3.9
@@ -21,7 +36,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 pytest grpcio-tools coverage
+        pip install flake8 pytest grpcio-tools coverage sqlalchemy
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Generate gRPC files
       run: |
