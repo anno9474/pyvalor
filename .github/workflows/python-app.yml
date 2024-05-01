@@ -38,14 +38,12 @@ jobs:
     - name: Generate coverage report and set output
       run: |
         coverage report > coverage.txt
-        cat coverage.txt
-        PERCENTAGE=$(grep -o 'TOTAL.*[0-9]*%' coverage.txt | grep -o '[0-9]*')
-        if [ -z "$PERCENTAGE" ]; then
-          echo "percentage=0" >> "$GITHUB_ENV"
-        else
-          echo "percentage=$PERCENTAGE" >> "$GITHUB_ENV"
-        fi
+        read STMTS MISSED COVERAGE <<< $(awk '/TOTAL/{print $2, $3, $4}' coverage.txt)
+        # COVERAGE=$(grep -o 'TOTAL.*[0-9]*%' coverage.txt | grep -o '[0-9]*')
+        echo "stmts=$STMTS" >> "$GITHUB_ENV"
+        echo "missed=$MISSED" >> "$GITHUB_ENV"
+        echo "coverage=$COVERAGE" >> "$GITHUB_ENV"
 
     - name: Display coverage percentage
       run: |
-        echo "Coverage Percentage: $test_percentage%"
+        echo "Coverage Percentage: $coverage%"
