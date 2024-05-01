@@ -38,8 +38,7 @@ jobs:
     - name: Generate coverage report
       run: |
         coverage report > coverage.txt
-        PERCENTAGE=$(grep -o 'TOTAL.*[0-9]*%' coverage.txt | grep -o '[0-9]*')
-        echo "percentage=$PERCENTAGE" >> $GITHUB_OUTPUT
+        echo "percentage=$(grep -o 'TOTAL.*[0-9]*%' coverage.txt | grep -o '[0-9]*')" >> $GITHUB_OUTPUT
 
     - name: Display coverage percentage
       run: |
