@@ -38,11 +38,9 @@ jobs:
     - name: Generate coverage report
       run: |
         coverage report > coverage.txt
-    - name: Extract coverage percentage
-      id: get_coverage
-      run: |
         PERCENTAGE=$(grep -o 'TOTAL.*[0-9]*%' coverage.txt | grep -o '[0-9]*')
-        echo "::set-output name=percentage::$PERCENTAGE"
+        echo "percentage=$PERCENTAGE" >> $GITHUB_OUTPUT
+
     - name: Display coverage percentage
       run: |
-        echo "Coverage Percentage: ${{ steps.get_coverage.outputs.percentage }}%"
+        echo "Coverage Percentage: ${{ env.percentage }}%"
