@@ -46,4 +46,6 @@ jobs:
 
     - name: Display coverage percentage
       run: |
-        echo "Coverage Percentage: $coverage%"
+        echo "Total Statements: $stmts"
+        echo "Total missed statements: $missed"
+        echo "Total Coverage Percentage: $coverage"

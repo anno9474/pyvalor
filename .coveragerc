@@ -1,0 +1,7 @@
+[run]
+source = .
+include = */*.py  # Adjust according to where your Python files are
+
+omit =
+    */tests/*  # Make sure not to include test files themselves in the report
+    */venv/*   # Exclude virtual environments
