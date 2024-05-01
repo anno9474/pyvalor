@@ -15,7 +15,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python 3.9
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: "3.9"
     - name: Install dependencies
@@ -46,7 +46,7 @@ jobs:
         echo "## Coverage Summary" >> $GITHUB_STEP_SUMMARY
         echo "- Total Statements: $STMTS" >> $GITHUB_STEP_SUMMARY
         echo "- Missed Statements: $MISSED" >> $GITHUB_STEP_SUMMARY
-        echo "- Coverage Percentage: $COVERAGE%" >> $GITHUB_STEP_SUMMARY
+        echo "- Coverage Percentage: $COVERAGE" >> $GITHUB_STEP_SUMMARY
 
     - name: Display coverage percentage
       run: |
