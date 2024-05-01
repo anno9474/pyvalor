@@ -10,10 +10,12 @@ import time
 load_dotenv()
 
 class Connection:
-    _info = {"host": os.environ["DBHOST"],
-        "user": os.environ["DBUSER"],
-        "password": os.environ["DBPASS"],
-        "database":os.environ["DBNAME"]}
+    _info = {
+        "host": os.getenv("DBHOST", "127.0.0.1"),
+        "user": os.getenv("DBUSER", "testuser"),
+        "password": os.getenv("DBPASS", "testpass"),
+        "database": os.getenv("DBNAME", "testdb")
+    }
     last_connected = time.time()
     connection_live = 120 # 2 minute(s) per connection
     conn = mysql.connector.connect(**_info)

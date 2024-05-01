@@ -1,9 +1,9 @@
 from dotenv import load_dotenv
-load_dotenv(dotenv_path='.env.test')
 from unittest.mock import patch, MagicMock
 import pytest
 from heartbeat.heartbeat import Heartbeat
 
+load_dotenv(dotenv_path='.env.test')
 
 @pytest.fixture
 def mock_env(monkeypatch):
