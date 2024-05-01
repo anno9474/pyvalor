@@ -35,10 +35,16 @@ jobs:
     - name: Test with pytest
       run: |
         coverage run -m pytest
-    - name: Generate coverage report
+    - name: Generate coverage report and set output
       run: |
         coverage report > coverage.txt
-        echo "percentage=$(grep -o 'TOTAL.*[0-9]*%' coverage.txt | grep -o '[0-9]*')" >> $GITHUB_OUTPUT
+        PERCENTAGE=$(grep -o 'TOTAL.*[0-9]*%' coverage.txt | grep -o '[0-9]*')
+        if [ -z "$PERCENTAGE" ]; then
+          echo "percentage='0'" >> $GITHUB_OUTPUT
+        else
+          echo "percentage='$PERCENTAGE'" >> $GITHUB_OUTPUT 
+        fi
+    
 
     - name: Display coverage percentage
       run: |
