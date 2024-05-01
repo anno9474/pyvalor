@@ -39,6 +39,7 @@ jobs:
       run: |
         coverage report > coverage.txt
         PERCENTAGE=$(grep -o 'TOTAL.*[0-9]*%' coverage.txt | grep -o '[0-9]*')
+        echo $PERCENTAGE
         if [ -z "$PERCENTAGE" ]; then
           echo "percentage=0" >> "$GITHUB_ENV"
         else
